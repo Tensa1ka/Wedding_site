@@ -9,9 +9,19 @@ const PAL = {
   ivory:     { hi: '#ffffff', mid: '#f4ece2', lo: '#cdbcaa', vein: '#dccfc0' },
   powder:    { hi: '#e3edf4', mid: '#b2c7d6', lo: '#7f97aa' },
   misty:     { hi: '#c4d1d7', mid: '#8299a3', lo: '#56707b' },
-  euca:      { hi: '#c9d3cf', mid: '#9fb0ad', lo: '#677b7b' },
+  euca:      { hi: '#cfd8c4', mid: '#9fb08f', lo: '#61755a' },
   sage:      { hi: '#b9c4b0', mid: '#8e9c86', lo: '#5d6b58' },
-  stem:      '#7d8c7a'
+  // зелёно-белая гамма
+  lime:      { hi: '#eef4c4', mid: '#b9c86c', lo: '#7a8c36', vein: '#8c9e45' },
+  lime2:     { hi: '#f4f8dc', mid: '#d2dd98', lo: '#98a85a', vein: '#a7b66a' },
+  white:     { hi: '#ffffff', mid: '#f3f1e8', lo: '#c6c4b2', vein: '#dcdacb' },
+  cream:     { hi: '#fffcf3', mid: '#efe8d6', lo: '#c4b897', vein: '#d9cfb6' },
+  hydraG:    { hi: '#f1f6dc', mid: '#c9d79c', lo: '#90a65a' },
+  hydraW:    { hi: '#ffffff', mid: '#e9eedb', lo: '#b4c096' },
+  amaG:      { hi: '#dde7a8', mid: '#aabb64', lo: '#6f8436' },
+  leaf:      { hi: '#8fa865', mid: '#56723a', lo: '#2e451c' },
+  olive:     { hi: '#b7bf8f', mid: '#8b9662', lo: '#5d6a3c' },
+  stem:      '#6f8452'
 };
 
 let _uid = 0;
@@ -107,7 +117,7 @@ function anthurium(defs, g, x, y, s, rot, key, opts = {}) {
 }
 
 // лист антуриума (сердцевидный, приглушённый)
-function anthLeaf(defs, g, x, y, s, rot, key = 'sage') {
+function anthLeaf(defs, g, x, y, s, rot, key = 'leaf') {
   const P = PAL[key];
   const gg = el('g', { transform: `translate(${x} ${y}) rotate(${rot}) scale(${s})`, filter: 'url(#fShadow)' }, g);
   const d = 'M0 0C-30-30-96-22-100 30C-104 92-44 160 0 230C44 160 104 92 100 30C96-22 30-30 0 0Z';
@@ -133,8 +143,8 @@ function floret(defs, g, x, y, r, rot, cols) {
     const a = k * 90 + (rnd() - .5) * 16;
     el('path', { d: `M0 ${-r * .08}C${-r * .5} ${-r * .2} ${-r * .62} ${-r * .95} 0 ${-r}C${r * .62} ${-r * .95} ${r * .5} ${-r * .2} 0 ${-r * .08}Z`, fill, transform: `rotate(${f(a)})`, stroke: c[1], 'stroke-opacity': .5, 'stroke-width': .7 }, gg);
   }
-  el('circle', { r: r * .13, fill: '#efe6d6' }, gg);
-  el('circle', { r: r * .06, fill: '#8f9cab' }, gg);
+  el('circle', { r: r * .13, fill: '#e4e9cf' }, gg);
+  el('circle', { r: r * .06, fill: '#9aa86a' }, gg);
 }
 
 function hydrangea(defs, g, x, y, R, keys = ['powder', 'misty'], opts = {}) {
@@ -194,7 +204,7 @@ function rose(defs, g, x, y, R, key, rot = 0) {
 
 // ---------- Эвкалипт (круглые листья с налётом) ----------
 function eucalyptus(defs, g, pts, leafR = 16, key = 'euca', every = 3) {
-  stem(g, pts, 2.6, '#8a8f84');
+  stem(g, pts, 2.6, '#7e8a6c');
   const P = PAL[key];
   const gg = el('g', { filter: 'url(#fShadowSm)' }, g);
   for (let i = 2; i < pts.length - 1; i += every) {

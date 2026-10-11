@@ -5,22 +5,22 @@
   #art { display: block; width: 760px; height: 1300px; }
 </style></head>
 <body>
-<!-- Рама-картуш мягкого золота: багет, бусины, гребни сверху и снизу -->
+<!-- Рама-картуш из старого серебра: багет, бусины, гребни сверху и снизу -->
 <svg id="art" viewBox="0 0 760 1300" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f0d9a4"/>
-      <stop offset=".3" stop-color="#cba05d"/>
-      <stop offset=".55" stop-color="#e6c88b"/>
-      <stop offset=".8" stop-color="#b48745"/>
-      <stop offset="1" stop-color="#d9b676"/>
+      <stop offset="0" stop-color="#e9e5dc"/>
+      <stop offset=".3" stop-color="#9d9484"/>
+      <stop offset=".55" stop-color="#d6cfc2"/>
+      <stop offset=".8" stop-color="#7b7163"/>
+      <stop offset="1" stop-color="#bfb7a8"/>
     </linearGradient>
     <filter id="metal" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
       <feGaussianBlur in="SourceAlpha" stdDeviation="4.5" result="b"/>
       <feDiffuseLighting in="b" surfaceScale="7" diffuseConstant="1" lighting-color="#fff" result="d">
         <feDistantLight azimuth="235" elevation="38"/>
       </feDiffuseLighting>
-      <feSpecularLighting in="b" surfaceScale="7" specularConstant="1.1" specularExponent="22" lighting-color="#fff4d6" result="s">
+      <feSpecularLighting in="b" surfaceScale="7" specularConstant="1.1" specularExponent="22" lighting-color="#ffffff" result="s">
         <feDistantLight azimuth="235" elevation="44"/>
       </feSpecularLighting>
       <feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1="1.35" k2="0" k3="0" k4="0" result="lit"/>
@@ -28,7 +28,7 @@
       <feComposite in="all" in2="SourceAlpha" operator="in" result="allc"/>
       <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="sb"/>
       <feOffset in="sb" dx="4" dy="10" result="so"/>
-      <feFlood flood-color="#4a3424" flood-opacity=".32"/>
+      <feFlood flood-color="#2c2a22" flood-opacity=".34"/>
       <feComposite in2="so" operator="in" result="sh"/>
       <feMerge><feMergeNode in="sh"/><feMergeNode in="allc"/></feMerge>
     </filter>
@@ -37,7 +37,7 @@
       <feDiffuseLighting in="b" surfaceScale="4" diffuseConstant="1" lighting-color="#fff" result="d">
         <feDistantLight azimuth="235" elevation="40"/>
       </feDiffuseLighting>
-      <feSpecularLighting in="b" surfaceScale="4" specularConstant="1.1" specularExponent="20" lighting-color="#fff4d6" result="s">
+      <feSpecularLighting in="b" surfaceScale="4" specularConstant="1.1" specularExponent="20" lighting-color="#ffffff" result="s">
         <feDistantLight azimuth="235" elevation="46"/>
       </feSpecularLighting>
       <feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1="1.35" k2="0" k3="0" k4="0" result="lit"/>
@@ -45,7 +45,7 @@
       <feComposite in="all" in2="SourceAlpha" operator="in" result="allc"/>
       <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="sb"/>
       <feOffset in="sb" dx="1.5" dy="3" result="so"/>
-      <feFlood flood-color="#4a3424" flood-opacity=".35"/>
+      <feFlood flood-color="#2c2a22" flood-opacity=".38"/>
       <feComposite in2="so" operator="in" result="sh"/>
       <feMerge><feMergeNode in="sh"/><feMergeNode in="allc"/></feMerge>
     </filter>

@@ -5,7 +5,7 @@
   #art { display: block; width: 800px; height: 1100px; }
 </style></head>
 <body>
-<!-- Овальная рама: тиснёная бумага цвета слоновой кости, тонкая золотая линия -->
+<!-- Овальная рама: тиснёная белая бумага с лавровым венком -->
 <svg id="art" viewBox="0 0 800 1100" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <filter id="paper" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
@@ -17,7 +17,7 @@
       <feComposite in="lit" in2="SourceAlpha" operator="in" result="litc"/>
       <feGaussianBlur in="SourceAlpha" stdDeviation="7" result="sb"/>
       <feOffset in="sb" dx="4" dy="9" result="so"/>
-      <feFlood flood-color="#7a6253" flood-opacity=".28"/>
+      <feFlood flood-color="#5e5d50" flood-opacity=".26"/>
       <feComposite in2="so" operator="in" result="sh"/>
       <feMerge><feMergeNode in="sh"/><feMergeNode in="litc"/></feMerge>
     </filter>
@@ -30,7 +30,7 @@
       <feComposite in="lit" in2="SourceAlpha" operator="in" result="litc"/>
       <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="sb"/>
       <feOffset in="sb" dx="1.5" dy="3" result="so"/>
-      <feFlood flood-color="#7a6253" flood-opacity=".3"/>
+      <feFlood flood-color="#5e5d50" flood-opacity=".28"/>
       <feComposite in2="so" operator="in" result="sh"/>
       <feMerge><feMergeNode in="sh"/><feMergeNode in="litc"/></feMerge>
     </filter>
@@ -44,8 +44,8 @@
       <stop offset="0" stop-color="#e3c78d"/><stop offset=".5" stop-color="#c09553"/><stop offset="1" stop-color="#a77c3f"/>
     </linearGradient>
   </defs>
-  <g id="base" fill="#fbf3ea" filter="url(#paper)"></g>
-  <g id="mid" fill="#fcf8f3" filter="url(#paperFine)"></g>
+  <g id="base" fill="#f8f6f0" filter="url(#paper)"></g>
+  <g id="mid" fill="#fbfaf6" filter="url(#paperFine)"></g>
   <g id="top" fill="#fffdf9" filter="url(#paperFine)"></g>
   <g id="gilt"></g>
 </svg>
@@ -118,7 +118,6 @@
   });
 
   // тонкая золотая линия внутри
-  el('path', { d: E(IRX - 20, IRY - 20), fill: 'none', stroke: 'url(#gold)', 'stroke-width': 1.8, opacity: .9 }, document.getElementById('gilt'));
-  el('rect', { width: 800, height: 1100, fill: '#fff', filter: 'url(#grain)', 'clip-path': 'url(#cameo)' }, document.getElementById('gilt'));
+    el('rect', { width: 800, height: 1100, fill: '#fff', filter: 'url(#grain)', 'clip-path': 'url(#cameo)' }, document.getElementById('gilt'));
 </script>
 </body></html>

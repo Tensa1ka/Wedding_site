@@ -7,23 +7,26 @@
   <meta name="description" content="Приглашение на свадьбу Фёдора и Ирины 21 июля 2027 года, «Хрустальный Сад», Москва">
   <meta property="og:title" content="Фёдор и Ирина – 21.07.2027">
   <meta property="og:description" content="Приглашаем вас на нашу свадьбу">
-  <meta name="theme-color" content="#b9837d">
-  <link rel="preload" href="assets/fonts/greatvibes-cyr.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/cormorant-cyr.woff2" as="font" type="font/woff2" crossorigin>
+  <meta name="theme-color" content="#23270b">
   <link rel="preload" href="assets/img/velvet.webp" as="image">
   <link rel="preload" href="assets/img/seal.webp" as="image">
+  <link rel="preload" href="assets/fonts/cormorant-cyr.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/greatvibes-cyr.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
   <script>document.documentElement.className = "js";</script>
 </head>
 <body>
 
-  <!-- ============ ЗАНАВЕС С ПЕЧАТЬЮ ============ -->
+  <!-- ============ ЛИЦО ОТКРЫТКИ: БАРХАТНЫЙ ЗАНАВЕС С ПЕЧАТЬЮ ============ -->
   <div class="intro" id="intro">
+    <div class="intro__glow" aria-hidden="true"></div>
     <div class="curtain curtain--l" aria-hidden="true"></div>
     <div class="curtain curtain--r" aria-hidden="true"></div>
     <div class="intro__center">
       <button class="seal" id="intro-open" type="button" aria-label="Открыть приглашение">
-        <img src="assets/img/seal.webp" alt="" width="1024" height="1024">
+        <span class="seal__ring" aria-hidden="true"></span>
+        <img class="seal__img" src="assets/img/seal.webp" alt="" width="1024" height="1024">
+        <span class="seal__shine" aria-hidden="true"></span>
       </button>
       <p class="intro__hint">Нажмите, чтобы открыть</p>
     </div>
@@ -31,37 +34,41 @@
 
   <!-- ============ ОБЛОЖКА ============ -->
   <header class="hero" id="top">
-    <img class="hero__vines" src="assets/img/vines.webp" alt="" aria-hidden="true" width="1680" height="912">
-    <div class="col hero__col">
-      <p class="hero__kicker">Wedding Day</p>
-      <div class="heart">
-        <img class="heart__img" src="assets/img/heart.webp" alt="" width="1312" height="1216">
-        <div class="heart__text">
-          <h1 class="heart__names">
-            <span>Фёдор <i>&amp;</i></span>
-            <span>Ирина</span>
-          </h1>
-          <p class="heart__date">21.07.2027</p>
+    <div class="hero__stage">
+      <img class="hero__vines" data-parallax=".18" src="assets/img/vines.webp" alt="" aria-hidden="true" width="1680" height="912">
+      <div class="dust" aria-hidden="true"></div>
+      <div class="col hero__col">
+        <p class="hero__kicker" data-letters>Wedding Day</p>
+        <div class="heart">
+          <img class="heart__img" src="assets/img/heart.webp" alt="" width="1312" height="1216">
+          <span class="heart__shine" aria-hidden="true"></span>
+          <div class="heart__text">
+            <h1 class="heart__names">
+              <span>Фёдор <i>&amp;</i></span>
+              <span>Ирина</span>
+            </h1>
+            <p class="heart__date">21.07.2027</p>
+          </div>
         </div>
+        <a class="scroll-hint" href="#invite">
+          <span>Листайте вниз</span>
+          <svg viewBox="0 0 24 12" aria-hidden="true"><path d="M2 2l10 8 10-8"/></svg>
+        </a>
       </div>
-      <a class="scroll-hint" href="#invite">
-        <span>Листайте вниз</span>
-        <svg viewBox="0 0 24 12" aria-hidden="true"><path d="M2 2l10 8 10-8"/></svg>
-      </a>
+      <img class="bouquet bouquet--hl" src="assets/img/corner.webp" alt="" aria-hidden="true" width="1143" height="759">
+      <img class="bouquet bouquet--hr" src="assets/img/corner.webp" alt="" aria-hidden="true" width="1143" height="759">
     </div>
-    <img class="bouquet bouquet--hl" src="assets/img/corner.webp" alt="" aria-hidden="true" width="1143" height="759">
-    <img class="bouquet bouquet--hr" src="assets/img/corner.webp" alt="" aria-hidden="true" width="1143" height="759">
   </header>
 
   <main>
     <!-- ============ ПРИГЛАШЕНИЕ И КАЛЕНДАРЬ ============ -->
     <section class="sec sec--invite" id="invite">
       <div class="col">
-        <div class="arch">
+        <div class="arch" data-reveal="rise">
           <img class="garland garland--l" src="assets/img/garland.webp" alt="" aria-hidden="true" width="871" height="1107" loading="lazy" decoding="async">
           <img class="garland garland--r" src="assets/img/garland.webp" alt="" aria-hidden="true" width="871" height="1107" loading="lazy" decoding="async">
           <div class="arch__body">
-            <h2 class="title" data-reveal>Дорогие<br>родные и близкие!</h2>
+            <h2 class="title" data-write>Дорогие<br>родные и близкие!</h2>
             <p class="text" data-reveal>
               Мы будем счастливы разделить с вами день, наполненный любовью,
               теплом и радостными моментами.
@@ -71,7 +78,7 @@
               которые останутся с нами навсегда!
             </p>
 
-            <h3 class="title title--month" data-reveal>Июль</h3>
+            <h3 class="title title--month" data-write>Июль</h3>
             <div class="cal" data-inview role="img" aria-label="Июль 2027 года, день свадьбы – среда, 21 июля">
               <span class="cal__wd">пн</span><span class="cal__wd">вт</span><span class="cal__wd">ср</span><span class="cal__wd">чт</span><span class="cal__wd">пт</span><span class="cal__wd">сб</span><span class="cal__wd">вс</span>
               <i></i><i></i><i></i>
@@ -90,28 +97,31 @@
 
     <!-- ============ АДРЕС ============ -->
     <section class="sec sec--place" id="place">
+      <img class="sec__vines" data-parallax=".1" src="assets/img/vines.webp" alt="" aria-hidden="true" width="1680" height="912" loading="lazy" decoding="async">
       <div class="col">
-        <div class="oval" data-reveal="up">
+        <div class="oval" data-reveal="frame">
           <img class="oval__img" src="assets/img/oval.webp" alt="" width="1200" height="1650" loading="lazy" decoding="async">
+          <span class="shine shine--oval" aria-hidden="true"></span>
           <div class="oval__text">
-            <h2 class="title">Адрес</h2>
-            <p class="venue">«Хрустальный Сад»</p>
-            <p class="text">г. Москва, ул. Жужа, 37</p>
-            <p class="text text--note">Территория парка «Коломенское», недалеко от набережной Москвы-реки</p>
-            <a class="link" href="https://yandex.ru/maps/?text=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C%20%D1%83%D0%BB%D0%B8%D1%86%D0%B0%20%D0%96%D1%83%D0%B6%D0%B0%2C%2037" target="_blank" rel="noopener">Открыть на карте</a>
+            <h2 class="title" data-write>Адрес</h2>
+            <p class="venue" data-reveal>«Хрустальный Сад»</p>
+            <p class="text" data-reveal>г. Москва, ул. Жужа, 37</p>
+            <p class="text text--note" data-reveal>Территория парка «Коломенское», недалеко от набережной Москвы-реки</p>
+            <a class="link" data-reveal href="https://yandex.ru/maps/?text=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C%20%D1%83%D0%BB%D0%B8%D1%86%D0%B0%20%D0%96%D1%83%D0%B6%D0%B0%2C%2037" target="_blank" rel="noopener">Открыть на карте</a>
           </div>
         </div>
-        <img class="callas" src="assets/img/callas.webp" alt="" aria-hidden="true" width="480" height="1309" loading="lazy" decoding="async">
+        <img class="callas" data-parallax="-.06" data-bloom src="assets/img/callas.webp" alt="" aria-hidden="true" width="480" height="1309" loading="lazy" decoding="async">
       </div>
     </section>
 
     <!-- ============ ПРОГРАММА ============ -->
     <section class="sec sec--program" id="program">
       <div class="col">
-        <div class="frame" data-reveal="up">
-          <img class="frame__img" src="assets/img/goldframe.webp" alt="" width="1140" height="1950" loading="lazy" decoding="async">
+        <div class="frame" data-reveal="frame">
+          <img class="frame__img" src="assets/img/frame.webp" alt="" width="1140" height="1950" loading="lazy" decoding="async">
+          <span class="shine shine--frame" aria-hidden="true"></span>
           <div class="frame__card">
-            <h2 class="title">Программа</h2>
+            <h2 class="title" data-write>Программа</h2>
             <ol class="prog" data-inview>
               <li><time>15:00</time><span>Сбор гостей</span></li>
               <li><time>16:00</time><span>Церемония</span></li>
@@ -119,7 +129,7 @@
               <li><time>23:00</time><span>Завершение</span></li>
             </ol>
           </div>
-          <img class="frame__flowers" src="assets/img/cluster.webp" alt="" aria-hidden="true" width="693" height="563" loading="lazy" decoding="async">
+          <img class="frame__flowers" data-bloom src="assets/img/cluster.webp" alt="" aria-hidden="true" width="693" height="563" loading="lazy" decoding="async">
         </div>
       </div>
     </section>
@@ -127,9 +137,9 @@
     <!-- ============ ДРЕСС-КОД · ФОТО · АНКЕТА ============ -->
     <section class="sec sec--panel">
       <div class="col">
-        <div class="panel">
+        <div class="panel" data-reveal="rise">
           <div class="panel__part" id="dress">
-            <h2 class="title" data-reveal>Дресс-код</h2>
+            <h2 class="title" data-write>Дресс-код</h2>
             <p class="text" data-reveal>
               Мы будем очень рады, если в своих образах вы поддержите
               цветовую гамму нашего дня:
@@ -147,7 +157,7 @@
           </div>
 
           <div class="panel__part" id="photo">
-            <h2 class="title" data-reveal>Фото</h2>
+            <h2 class="title" data-write>Фото</h2>
             <p class="text" data-reveal>
               После праздника, когда фото будут готовы, здесь появится
               ссылка на свадебный альбом!
@@ -155,12 +165,12 @@
           </div>
 
           <div class="panel__part" id="rsvp">
-            <h2 class="title" data-reveal>Анкета</h2>
+            <h2 class="title" data-write>Анкета</h2>
             <p class="text" data-reveal>
               Пожалуйста, подтвердите присутствие до 1 июня 2027 года,
               чтобы мы смогли спланировать всё наилучшим образом!
             </p>
-            <form class="rsvp" id="rsvp-form" data-reveal
+            <form class="rsvp" id="rsvp-form" data-inview
                   action="https://docs.google.com/forms/d/e/1FAIpQLSe4BrtPvw5_LbyWcVfD28BD3UFVkCT_nhqsxXx3hOm8lzBYHQ/formResponse"
                   method="post" target="_blank" novalidate>
               <label class="field">
@@ -190,8 +200,9 @@
   <footer class="finale">
     <div class="col">
       <p class="finale__love" data-reveal>С любовью,</p>
-      <p class="finale__names" data-reveal>Фёдор <i>&amp;</i> Ирина</p>
-      <div class="countdown" id="countdown" data-reveal="up" aria-label="До свадьбы осталось">
+      <p class="finale__names" data-write>Фёдор <i>&amp;</i> Ирина</p>
+      <div class="countdown" id="countdown" data-inview aria-label="До свадьбы осталось">
+        <svg class="countdown__line" aria-hidden="true" preserveAspectRatio="none"><rect pathLength="1"/></svg>
         <div><b data-unit="days">0</b><span data-label="days">дней</span></div>
         <em aria-hidden="true">:</em>
         <div><b data-unit="hours">00</b><span data-label="hours">часов</span></div>
@@ -201,7 +212,7 @@
         <div><b data-unit="seconds">00</b><span data-label="seconds">секунд</span></div>
       </div>
     </div>
-    <img class="finale__flowers" src="assets/img/finale.webp" alt="" aria-hidden="true" width="1942" height="856" loading="lazy" decoding="async">
+    <img class="finale__flowers" data-bloom src="assets/img/finale.webp" alt="" aria-hidden="true" width="1942" height="856" loading="lazy" decoding="async">
   </footer>
 
   <!-- ============ МУЗЫКА ============ -->

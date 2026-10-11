@@ -1,4 +1,4 @@
-"""Фон из фатина: мягкие полупрозрачные драпировки в тёплой шампани.
+"""Фон из фатина: мягкие полупрозрачные драпировки цвета слоновой кости.
 Плитка бесшовная по обеим осям – фон тянется на любую ширину и высоту.
 Запуск: python3 tools/tulle.py assets/img/tulle.webp [ширина высота seed]"""
 import sys
@@ -47,9 +47,9 @@ v = np.clip(v, 0, 1.1)
 
 tint = gaussian_filter(rng.normal(0, 1, (H, W)), 140, mode='wrap')
 tint = (tint - tint.min()) / (np.ptp(tint) + 1e-6)
-shadow = np.array([214, 196, 182]) / 255
-blush = np.array([228, 200, 194]) / 255
-light = np.array([253, 250, 246]) / 255
+shadow = np.array([214, 212, 200]) / 255
+blush = np.array([222, 224, 210]) / 255      # лёгкий оттенок шалфея
+light = np.array([253, 252, 248]) / 255
 base = shadow + (blush - shadow) * (tint[..., None] * .55)
 t = np.clip((v - .55) / .5, 0, 1)[..., None]
 col = base + (light - base) * t ** .85
