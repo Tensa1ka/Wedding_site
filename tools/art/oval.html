@@ -1,0 +1,124 @@
+<!doctype html>
+<html data-scale="1.5"><head><meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: transparent; }
+  #art { display: block; width: 800px; height: 1100px; }
+</style></head>
+<body>
+<!-- Овальная рама: тиснёная бумага цвета слоновой кости, тонкая золотая линия -->
+<svg id="art" viewBox="0 0 800 1100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="b"/>
+      <feDiffuseLighting in="b" surfaceScale="5" diffuseConstant="1.1" lighting-color="#fff" result="d">
+        <feDistantLight azimuth="235" elevation="52"/>
+      </feDiffuseLighting>
+      <feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1="1.16" k2="0" k3="0" k4="0" result="lit"/>
+      <feComposite in="lit" in2="SourceAlpha" operator="in" result="litc"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="7" result="sb"/>
+      <feOffset in="sb" dx="4" dy="9" result="so"/>
+      <feFlood flood-color="#7a6253" flood-opacity=".28"/>
+      <feComposite in2="so" operator="in" result="sh"/>
+      <feMerge><feMergeNode in="sh"/><feMergeNode in="litc"/></feMerge>
+    </filter>
+    <filter id="paperFine" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.4" result="b"/>
+      <feDiffuseLighting in="b" surfaceScale="3.5" diffuseConstant="1.1" lighting-color="#fff" result="d">
+        <feDistantLight azimuth="235" elevation="48"/>
+      </feDiffuseLighting>
+      <feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1="1.27" k2="0" k3="0" k4="0" result="lit"/>
+      <feComposite in="lit" in2="SourceAlpha" operator="in" result="litc"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="sb"/>
+      <feOffset in="sb" dx="1.5" dy="3" result="so"/>
+      <feFlood flood-color="#7a6253" flood-opacity=".3"/>
+      <feComposite in2="so" operator="in" result="sh"/>
+      <feMerge><feMergeNode in="sh"/><feMergeNode in="litc"/></feMerge>
+    </filter>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="2"/>
+      <feColorMatrix values="0 0 0 0 .5  0 0 0 0 .44  0 0 0 0 .38  0 0 0 .1 0"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+    <clipPath id="cameo"><ellipse cx="400" cy="560" rx="334" ry="459"/></clipPath>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e3c78d"/><stop offset=".5" stop-color="#c09553"/><stop offset="1" stop-color="#a77c3f"/>
+    </linearGradient>
+  </defs>
+  <g id="base" fill="#fbf3ea" filter="url(#paper)"></g>
+  <g id="mid" fill="#fcf8f3" filter="url(#paperFine)"></g>
+  <g id="top" fill="#fffdf9" filter="url(#paperFine)"></g>
+  <g id="gilt"></g>
+</svg>
+<script src="ornament.js"></script>
+<script>
+  const base = document.getElementById('base'), mid = document.getElementById('mid'), hi = document.getElementById('top');
+  const CX = 400, CY = 560;
+  const ORX = 330, ORY = 455, IRX = 284, IRY = 407;
+  const E = (rx, ry) => `M${CX + rx} ${CY}A${rx} ${ry} 0 1 0 ${CX - rx} ${CY}A${rx} ${ry} 0 1 0 ${CX + rx} ${CY}Z`;
+
+  // бумажная камея целиком и приподнятая полоса рамы
+  el('path', { d: E(ORX + 4, ORY + 4) }, base);
+  el('path', { d: E(ORX - 2, ORY - 2) + E(IRX, IRY), 'fill-rule': 'evenodd' }, mid);
+
+  // лавровый венок по полосе: стебель и парные листья
+  const RX = (ORX + IRX) / 2, RY = (ORY + IRY) / 2;
+  el('path', { d: E(RX + 1.5, RY + 1.5) + E(RX - 1.5, RY - 1.5), 'fill-rule': 'evenodd' }, hi);
+  ellipsePts(CX, CY, RX, RY, 96, .02).forEach((p, i) => {
+    const nearTop = p.y < CY - RY + 40, nearBot = p.y > CY + RY - 40, nearSide = Math.abs(p.y - CY) < 36;
+    if (nearTop || nearBot || nearSide) return;
+    // листья смотрят от низа к верху с обеих сторон
+    const dir = p.x < CX ? -1 : 1;
+    const a = p.ang + (dir < 0 ? Math.PI : 0) * 0 + (p.y < CY ? Math.PI : 0) * (dir > 0 ? 1 : 1);
+    const along = Math.atan2(Math.sin(p.ang), Math.cos(p.ang)) + (p.y > CY ? Math.PI : 0);
+    el('path', { d: leaf(p.x, p.y, 26, 8.5, along + .55, .2) }, hi);
+    el('path', { d: leaf(p.x, p.y, 26, 8.5, along - .55, -.2) }, hi);
+  });
+  // бусины по внутреннему и внешнему краю
+  ellipsePts(CX, CY, IRX - 9, IRY - 9, 132).forEach(p => el('circle', { cx: f(p.x), cy: f(p.y), r: 2.6 }, hi));
+  ellipsePts(CX, CY, ORX - 10, ORY - 10, 150).forEach(p => el('circle', { cx: f(p.x), cy: f(p.y), r: 2 }, hi));
+
+  // симметричный орнамент: половина + зеркало
+  function mirrored(build, parent) {
+    build(el('g', {}, parent));
+    build(el('g', { transform: `translate(${2 * CX} 0) scale(-1 1)` }, parent));
+  }
+
+  // верхний гребень: пальметта, крупные завитки, листья аканта
+  mirrored(g => {
+    let p = bez([CX - 8, 150], [CX - 50, 64], [CX - 160, 50], [CX - 200, 112], 44);
+    el('path', { d: ribbon(curl(p, 24, 1.15, -1), 24, 6, 26) }, g);
+    p = bez([CX - 14, 160], [CX - 80, 168], [CX - 160, 176], [CX - 236, 150], 36);
+    el('path', { d: ribbon(curl(p, 18, 1.05, 1), 18, 5) }, g);
+    [[CX - 110, 66, -2.75, 52], [CX - 160, 72, -2.3, 46], [CX - 70, 82, -2.2, 44], [CX - 120, 172, 2.95, 46], [CX - 182, 168, 2.75, 40]]
+      .forEach(([x, y, a, L]) => el('path', { d: leaf(x, y, L, 14, a) }, g));
+  }, mid);
+  mirrored(g => {
+    [-1.3, -1.06, -.82].forEach((a, k) => el('path', { d: leaf(CX - 3, 128, 92 - k * 16, 19 - k * 2, a * Math.PI / 2, .1) }, g));
+    el('circle', { cx: CX - 202, cy: 136, r: 8 }, g);
+  }, hi);
+  el('path', { d: leaf(CX, 132, 108, 20, -Math.PI / 2, 0) }, hi);
+  el('circle', { cx: CX, cy: 138, r: 16 }, hi);
+
+  // нижний гребень: розетка, завитки, листья
+  mirrored(g => {
+    let p = bez([CX - 8, 990], [CX - 60, 1066], [CX - 160, 1068], [CX - 200, 1000], 44);
+    el('path', { d: ribbon(curl(p, 22, 1.15, 1), 22, 6, 24) }, g);
+    p = bez([CX - 14, 968], [CX - 80, 962], [CX - 160, 956], [CX - 230, 975], 36);
+    el('path', { d: ribbon(curl(p, 16, 1.0, -1), 16, 4) }, g);
+    [[CX - 110, 1060, 2.75, 46], [CX - 160, 1052, 2.35, 40], [CX - 64, 1046, 2.1, 40]].forEach(([x, y, a, L]) => el('path', { d: leaf(x, y, L, 13, a) }, g));
+  }, mid);
+  for (let k = 0; k < 10; k++) el('path', { d: leaf(CX, 1006, 40, 13, k / 10 * Math.PI * 2 + .3) }, hi);
+  el('circle', { cx: CX, cy: 1006, r: 13 }, hi);
+
+  // боковые розетки
+  [-1, 1].forEach(s => {
+    const x = CX + s * RX;
+    for (let k = 0; k < 8; k++) el('path', { d: leaf(x, CY, 26, 10, k / 8 * Math.PI * 2) }, hi);
+    el('circle', { cx: x, cy: CY, r: 9 }, hi);
+  });
+
+  // тонкая золотая линия внутри
+  el('path', { d: E(IRX - 20, IRY - 20), fill: 'none', stroke: 'url(#gold)', 'stroke-width': 1.8, opacity: .9 }, document.getElementById('gilt'));
+  el('rect', { width: 800, height: 1100, fill: '#fff', filter: 'url(#grain)', 'clip-path': 'url(#cameo)' }, document.getElementById('gilt'));
+</script>
+</body></html>

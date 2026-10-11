@@ -1,0 +1,195 @@
+<!doctype html>
+<html data-scale="1.6"><head><meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: transparent; }
+  #art { display: block; width: 820px; height: 760px; }
+</style></head>
+<body>
+<!-- Сердце из атласа в кружевной оборке с жемчужной отделкой -->
+<svg id="art" viewBox="0 0 820 760" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <path id="heart" d=""/>
+    <path id="heartIn" d=""/>
+    <clipPath id="heartClip"><use href="#heart"/></clipPath>
+
+    <!-- кружево: цветочные мотивы на сетке -->
+    <pattern id="net" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+      <path d="M0 0L9 9M9 0L0 9" stroke="#fff" stroke-width=".8" opacity=".75"/>
+    </pattern>
+    <pattern id="motif" width="54" height="48" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+      <g fill="none" stroke="#d9c9bb" stroke-width="2.6" opacity=".55" transform="translate(.8 1)">
+        <circle cx="14" cy="14" r="6"/>
+        <path d="M14 3c4 3 4 8 0 11c-4-3-4-8 0-11zM14 25c4-3 4-8 0-11c-4 3-4 8 0 11zM3 14c3-4 8-4 11 0c-3 4-8 4-11 0zM25 14c-3-4-8-4-11 0c3 4 8 4 11 0z"/>
+        <path d="M40 30c6 0 9 5 9 9M40 30c-6 0-9 5-9 9M40 30v-9M27 4c4 6 10 6 14 0"/>
+        <circle cx="40" cy="40" r="3.2"/>
+      </g>
+      <g fill="none" stroke="#fff" stroke-width="1.6" opacity=".95">
+        <circle cx="14" cy="14" r="6"/>
+        <path d="M14 3c4 3 4 8 0 11c-4-3-4-8 0-11zM14 25c4-3 4-8 0-11c-4 3-4 8 0 11zM3 14c3-4 8-4 11 0c-3 4-8 4-11 0zM25 14c-3-4-8-4-11 0c3 4 8 4 11 0z"/>
+        <path d="M40 30c6 0 9 5 9 9M40 30c-6 0-9 5-9 9M40 30v-9M27 4c4 6 10 6 14 0"/>
+        <circle cx="40" cy="40" r="3.2"/>
+      </g>
+      <g fill="#fff" opacity=".9">
+        <circle cx="14" cy="14" r="2.2"/><circle cx="40" cy="30" r="1.6"/><circle cx="30" cy="22" r="1.2"/><circle cx="4" cy="34" r="1.4"/><circle cx="50" cy="8" r="1.2"/>
+      </g>
+    </pattern>
+
+    <linearGradient id="satin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffdf9"/>
+      <stop offset=".45" stop-color="#f6eee5"/>
+      <stop offset=".7" stop-color="#efe3d7"/>
+      <stop offset="1" stop-color="#e6d6c8"/>
+    </linearGradient>
+    <radialGradient id="pearl" cx="35%" cy="32%" r="70%">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".45" stop-color="#f7efe7"/>
+      <stop offset=".85" stop-color="#d9c8ba"/>
+      <stop offset="1" stop-color="#bba697"/>
+    </radialGradient>
+
+    <filter id="linen" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9 .06" numOctaves="2" seed="3" result="n1"/>
+      <feTurbulence type="fractalNoise" baseFrequency=".06 .9" numOctaves="2" seed="5" result="n2"/>
+      <feBlend in="n1" in2="n2" mode="multiply"/>
+      <feColorMatrix values="0 0 0 0 .55  0 0 0 0 .47  0 0 0 0 .4  0 0 0 .18 0"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+    <filter id="drop" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+      <feOffset dy="12"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".22"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="dropSm" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.2"/>
+      <feOffset dy="2"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".35"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="emboss" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.6" result="b"/>
+      <feSpecularLighting in="b" surfaceScale="3" specularConstant=".9" specularExponent="18" lighting-color="#fff" result="s">
+        <feDistantLight azimuth="235" elevation="40"/>
+      </feSpecularLighting>
+      <feComposite in="s" in2="SourceAlpha" operator="in" result="s2"/>
+      <feOffset in="SourceAlpha" dx="1.5" dy="2" result="o"/>
+      <feFlood flood-color="#b9a493" flood-opacity=".55"/>
+      <feComposite in2="o" operator="in" result="sh"/>
+      <feMerge><feMergeNode in="sh"/><feMergeNode in="s2"/></feMerge>
+    </filter>
+  </defs>
+
+  <g filter="url(#drop)">
+    <g id="ruffle"></g>
+  </g>
+
+  <!-- атлас -->
+  <g filter="url(#dropSm)">
+    <use href="#heart" fill="url(#satin)"/>
+  </g>
+  <use href="#heart" fill="#fff" filter="url(#linen)"/>
+  <g clip-path="url(#heartClip)">
+    <ellipse cx="300" cy="250" rx="220" ry="120" fill="#fff" opacity=".45" transform="rotate(-25 300 250)" style="filter:blur(30px)"/>
+  </g>
+  <!-- тиснёная линия -->
+  <use href="#heartIn" fill="none" stroke="#000" stroke-width="3" filter="url(#emboss)"/>
+  <!-- жемчуг -->
+  <g id="pearls" filter="url(#dropSm)"></g>
+</svg>
+<script>
+  const NS = 'http://www.w3.org/2000/svg';
+  const cx = 410, cy = 352, S = 17.2;
+  // классическая кривая сердца
+  const hp = t => [cx + S * 16 * Math.pow(Math.sin(t), 3), cy - S * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))];
+  function pathOf(k, N = 360) {
+    let d = '';
+    for (let i = 0; i <= N; i++) {
+      const [x, y] = hp(i / N * Math.PI * 2);
+      const X = cx + (x - cx) * k, Y = cy + (y - cy) * k + (1 - k) * 22;
+      d += (i ? 'L' : 'M') + X.toFixed(1) + ' ' + Y.toFixed(1);
+    }
+    return d + 'Z';
+  }
+  document.getElementById('heart').setAttribute('d', pathOf(1));
+  document.getElementById('heartIn').setAttribute('d', pathOf(.9));
+
+  // точки вдоль контура с равным шагом
+  function samples(step) {
+    const fine = [];
+    for (let i = 0; i <= 4000; i++) fine.push(hp(i / 4000 * Math.PI * 2));
+    const out = []; let acc = 0;
+    for (let i = 1; i < fine.length; i++) {
+      const dx = fine[i][0] - fine[i - 1][0], dy = fine[i][1] - fine[i - 1][1];
+      acc += Math.hypot(dx, dy);
+      if (acc >= step) { acc = 0; const L = Math.hypot(dx, dy) || 1; out.push({ x: fine[i][0], y: fine[i][1], tx: dx / L, ty: dy / L }); }
+    }
+    return out;
+  }
+
+  // кружевная оборка: «лепестки» по нормали, гофре – полупрозрачными полосами
+  const ruffle = document.getElementById('ruffle');
+  const pts = samples(19);
+  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  // у острия и ложбинки нормали плавно переходят в «веер», чтобы оборка не ломалась
+  const tipY = hp(Math.PI)[1], cuspY = hp(0)[1];
+  const sstep = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+  function normalAt(p) {
+    let nx = p.ty, ny = -p.tx;
+    if ((p.x - cx) * nx + (p.y - (cy + 40)) * ny < 0) { nx = -nx; ny = -ny; }
+    const dTip = Math.hypot(p.x - cx, p.y - tipY), dCusp = Math.hypot(p.x - cx, p.y - cuspY);
+    let rx = 0, ry = 0, w = 0;
+    if (dTip < 150) { rx = p.x - cx; ry = p.y - (tipY - 150); w = 1 - sstep(40, 150, dTip); }
+    else if (dCusp < 90) { rx = p.x - cx; ry = p.y - (cuspY + 60); w = 1 - sstep(20, 90, dCusp); }
+    if (w > 0) { const L = Math.hypot(rx, ry) || 1; nx = nx * (1 - w) + rx / L * w; ny = ny * (1 - w) + ry / L * w; const M = Math.hypot(nx, ny); nx /= M; ny /= M; }
+    return [nx, ny];
+  }
+  pts.forEach((p, i) => {
+    const [nx, ny] = normalAt(p);
+    p.tx = -ny; p.ty = nx;             // касательная согласована с нормалью
+    const L = 62 + rnd() * 10, w = 34 + rnd() * 6;
+    const ax = p.x - p.tx * w / 2 - nx * 4, ay = p.y - p.ty * w / 2 - ny * 4;
+    const bx = p.x + p.tx * w / 2 - nx * 4, by = p.y + p.ty * w / 2 - ny * 4;
+    const ex = nx * L, ey = ny * L;
+    const r = w / 2;
+    const d = `M${ax} ${ay}L${ax + ex} ${ay + ey}A${r} ${r} 0 0 1 ${bx + ex} ${by + ey}L${bx} ${by}Z`;
+    const g = document.createElementNS(NS, 'g');
+    const op = i % 2 ? .5 : .62;
+    g.innerHTML = `
+      <path d="${d}" fill="#fbf7f2" opacity="${op}"/>
+      <path d="${d}" fill="url(#motif)"/>
+      <path d="${d}" fill="url(#net)"/>
+      <path d="${d}" fill="none" stroke="#d8c8bb" stroke-width=".8" opacity=".55"/>
+      <path d="M${p.x + nx * 6} ${p.y + ny * 6}L${p.x + nx * (L - 8)} ${p.y + ny * (L - 8)}" stroke="#cdbcae" stroke-width="${i % 2 ? 2.2 : 1.2}" opacity=".35"/>`;
+    ruffle.appendChild(g);
+    // пико по краю фестона
+    for (let k = 0; k <= 6; k++) {
+      const a = Math.PI * k / 6;
+      const ux = -p.tx * Math.cos(a) + nx * Math.sin(a), uy = -p.ty * Math.cos(a) + ny * Math.sin(a);
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('cx', p.x + ex - nx * 4 + ux * (r + 2.5)); c.setAttribute('cy', p.y + ey - ny * 4 + uy * (r + 2.5));
+      c.setAttribute('r', 1.8); c.setAttribute('fill', '#fff'); c.setAttribute('opacity', '.95');
+      ruffle.appendChild(c);
+    }
+  });
+  // вторая, внутренняя оборка – плотнее и короче
+  samples(15).forEach((p, i) => {
+    const [nx, ny] = normalAt(p);
+    p.tx = -ny; p.ty = nx;
+    const L = 30, w = 24, r = w / 2;
+    const ax = p.x - p.tx * w / 2, ay = p.y - p.ty * w / 2, bx = p.x + p.tx * w / 2, by = p.y + p.ty * w / 2;
+    const d = `M${ax} ${ay}L${ax + nx * L} ${ay + ny * L}A${r} ${r} 0 0 1 ${bx + nx * L} ${by + ny * L}L${bx} ${by}Z`;
+    const g = document.createElementNS(NS, 'g');
+    g.innerHTML = `<path d="${d}" fill="#fffdf9" opacity=".8"/><path d="${d}" fill="url(#motif)" opacity=".8"/>
+      <path d="${d}" fill="none" stroke="#dccdc0" stroke-width=".7" opacity=".6"/>`;
+    ruffle.appendChild(g);
+  });
+
+  // жемчужная нить по краю атласа
+  const pearls = document.getElementById('pearls');
+  samples(13.5).forEach(p => {
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', 5.6); c.setAttribute('fill', 'url(#pearl)');
+    pearls.appendChild(c);
+  });
+</script>
+</body></html>
