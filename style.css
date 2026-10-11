@@ -89,7 +89,7 @@ h1, h2, h3, p { margin: 0; }
 /* =========================================================
    Лицо открытки: бархатный занавес и печать
    ========================================================= */
-.intro { display: none; }
+.intro { display: none; background: var(--velvet); }   /* подложка, пока грузится бархат; при открытии убирается – за полотнами видна обложка */
 .js .intro {
   position: fixed;
   inset: 0;
@@ -99,6 +99,7 @@ h1, h2, h3, p { margin: 0; }
   overflow: hidden;
   touch-action: none;
 }
+.intro.is-open { background: none; }
 /* тёплый свет, который пробивается в щель занавеса */
 .intro__glow {
   position: absolute;
