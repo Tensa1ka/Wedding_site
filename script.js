@@ -15,7 +15,7 @@
   window.scrollTo(0, 0);
 
   function clamp(v, min, max) { return v < min ? min : v > max ? max : v; }
-  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
 
   /* ---------- Прелоадер ---------- */
   var preloader = document.getElementById("preloader");
@@ -84,22 +84,23 @@
   if (intro && openBtn) {
     root.classList.add("is-locked");
     openBtn.addEventListener("click", openInvitation);
-    setTimeout(function () { try { openBtn.focus({ preventScroll: true }); } catch (e) {} }, 1300);
   } else {
     opened = true;
     body.classList.add("is-opened");
   }
 
   /* ---------- Движение при прокрутке ----------
-     data-scrub="zoom"  — проявление с увеличением (0.86 → 1)
+     data-scrub="zoom"  — проявление с увеличением (0.9 → 1)
+     data-scrub="title" — заголовок «наводится на резкость»: подъём + расфокус → чёткость
      data-scrub="left"  — выезд слева + увеличение
      data-scrub="right" — выезд справа + увеличение
-     data-parallax="-90" — медленный сдвиг по вертикали (параллакс)  */
+     data-parallax="-90" — медленный сдвиг по вертикали (параллакс)
+     data-kenburns      — фото медленно «отъезжает» по мере прокрутки  */
   var SCRUB = {
-    zoom:  { x: 0,   y: 0,  s: 0.86 },
-    left:  { x: -70, y: 0,  s: 0.86 },
-    right: { x: 70,  y: 0,  s: 0.86 },
-    up:    { x: 0,   y: 40, s: 1 }
+    zoom:  { x: 0,   y: 18, s: 0.9,  b: 0 },
+    title: { x: 0,   y: 26, s: 0.94, b: 8 },
+    left:  { x: -70, y: 0,  s: 0.9,  b: 0 },
+    right: { x: 70,  y: 0,  s: 0.9,  b: 0 }
   };
 
   var scrubItems = [].map.call(document.querySelectorAll("[data-scrub]"), function (el) {
@@ -108,8 +109,13 @@
   var parallaxItems = [].map.call(document.querySelectorAll("[data-parallax]"), function (el) {
     return { el: el, amount: parseFloat(el.getAttribute("data-parallax")) || 0, top: 0, h: 0 };
   });
+  var zoomItems = [].map.call(document.querySelectorAll("[data-kenburns]"), function (el) {
+    return { el: el, box: el.parentNode, top: 0, h: 0 };
+  });
 
   function docTop(el) {
+    // у SVG-элементов нет offsetTop — считаем от ближайшего HTML-родителя
+    while (el && el.offsetTop === undefined) el = el.parentNode;
     var y = 0;
     while (el) { y += el.offsetTop; el = el.offsetParent; }
     return y;
@@ -124,6 +130,7 @@
     maxScroll = Math.max(0, body.offsetHeight - vh);
     scrubItems.forEach(function (it) { it.top = docTop(it.el); it.last = -1; });
     parallaxItems.forEach(function (it) { it.top = docTop(it.el); it.h = it.el.offsetHeight; });
+    zoomItems.forEach(function (it) { it.top = docTop(it.box); it.h = it.box.offsetHeight; });
     update();
   }
 
@@ -143,6 +150,7 @@
       it.el.style.opacity = p;
       it.el.style.transform = p === 1 ? "none" :
         "translate3d(" + (c.x * k).toFixed(1) + "px," + (c.y * k).toFixed(1) + "px,0) scale(" + (c.s + (1 - c.s) * p).toFixed(3) + ")";
+      if (c.b) it.el.style.filter = p > 0.98 ? "none" : "blur(" + (c.b * k).toFixed(2) + "px)";
     }
 
     if (!reduceMotion) {
@@ -150,6 +158,11 @@
         var pi = parallaxItems[j];
         var q = clamp((y + vh - pi.top) / (vh + pi.h), 0, 1);
         pi.el.style.transform = "translate3d(0," + (pi.amount * q).toFixed(1) + "px,0)";
+      }
+      for (var z = 0; z < zoomItems.length; z++) {
+        var zi = zoomItems[z];
+        var r = clamp((y + vh - zi.top) / (vh + zi.h), 0, 1);
+        zi.el.style.transform = "scale(" + (1.12 - 0.12 * r).toFixed(4) + ")";
       }
     }
   }
@@ -214,7 +227,7 @@
   function pad(n) { return n < 10 ? "0" + n : String(n); }
 
   if (cd) {
-    var timer;
+    var timer, started = false;
     var tick = function () {
       var diff = Math.max(0, target - Date.now());
       var s = Math.floor(diff / 1000);
@@ -225,9 +238,21 @@
         seconds: s % 60
       };
       Object.keys(v).forEach(function (u) {
-        cd.querySelector('[data-unit="' + u + '"]').textContent = u === "days" ? v[u] : pad(v[u]);
+        var num = cd.querySelector('[data-unit="' + u + '"]');
+        var text = u === "days" ? String(v[u]) : pad(v[u]);
+        if (num.textContent !== text) {
+          num.textContent = text;
+          // цифра мягко «выкатывается» сверху при каждом изменении
+          if (!reduceMotion && num.animate && started) {
+            num.animate(
+              [{ transform: "translateY(-35%)", opacity: 0, filter: "blur(3px)" }, { transform: "none", opacity: 1, filter: "blur(0)" }],
+              { duration: 520, easing: "cubic-bezier(.23,1,.32,1)" }
+            );
+          }
+        }
         cd.querySelector('[data-label="' + u + '"]').textContent = plural(v[u], WORDS[u]);
       });
+      started = true;
       if (diff === 0) clearInterval(timer);
     };
     tick();
