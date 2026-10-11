@@ -1,5 +1,5 @@
 /* =========================================================
-   Свадебный сайт · анимации и логика
+   Свадебный сайт · логика и анимации
    ========================================================= */
 (function () {
   "use strict";
@@ -8,119 +8,77 @@
   var body = document.body;
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  root.classList.add("motion-ready");
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-  window.scrollTo(0, 0);
 
-  /* ---------- Прелоадер → конверт ---------- */
-  var preloader = document.getElementById("preloader");
-  var intro = document.getElementById("intro");
-  var startedAt = Date.now();
-  var preloaderDone = false;
-
-  function hidePreloader() {
-    if (preloaderDone) return;
-    preloaderDone = true;
-    var wait = Math.max(0, 1200 - (Date.now() - startedAt));
-    setTimeout(function () {
-      if (preloader) {
-        preloader.classList.add("is-hidden");
-        setTimeout(function () { preloader.remove(); }, 900);
-      }
-      if (intro) requestAnimationFrame(function () { intro.classList.add("is-ready"); });
-    }, wait);
-  }
-  if (document.readyState === "complete") hidePreloader();
-  else window.addEventListener("load", hidePreloader);
-  setTimeout(hidePreloader, 4500);
-
-  /* ---------- Музыка ---------- */
+  /* ---------- Музыка (если положить assets/music.mp3) ---------- */
   var audio = document.getElementById("bg-music");
   var musicBtn = document.getElementById("music");
-  var opened = false;
-  var hasAudio = false;
 
   function setPlaying(on) {
     musicBtn.classList.toggle("is-playing", on);
     musicBtn.setAttribute("aria-pressed", on ? "true" : "false");
   }
-  function showMusicButton() { if (hasAudio && opened) musicBtn.hidden = false; }
   function playMusic() {
+    if (!audio) return;
+    audio.volume = 0.4;
     var p = audio.play();
     if (p && p.then) {
-      p.then(function () { hasAudio = true; setPlaying(true); showMusicButton(); })
-       .catch(function () { /* файла нет или браузер запретил — без музыки */ });
+      p.then(function () { musicBtn.hidden = false; setPlaying(true); })
+       .catch(function () { /* файла нет или браузер запретил – без музыки */ });
     }
   }
   if (audio && musicBtn) {
-    audio.volume = 0.4;
-    audio.addEventListener("loadedmetadata", function () { hasAudio = true; showMusicButton(); });
     audio.addEventListener("pause", function () { setPlaying(false); });
     audio.addEventListener("play", function () { setPlaying(true); });
     musicBtn.addEventListener("click", function () { if (audio.paused) playMusic(); else audio.pause(); });
   }
 
-  /* ---------- Открытие конверта ----------
-     антуриум приподнимается → клапан раскрывается → карточка выезжает →
-     конверт растворяется, и появляется обложка                          */
+  /* ---------- Занавес: печать → занавес собирается к краям → обложка ---------- */
+  var intro = document.getElementById("intro");
   var openBtn = document.getElementById("intro-open");
+  var opened = false;
 
+  function reveal() {
+    root.classList.remove("is-locked");
+    body.classList.add("is-opened");
+  }
   function openInvitation() {
     if (opened) return;
     opened = true;
-    if (audio) playMusic();
-    showMusicButton();
-
-    if (reduceMotion) {
-      intro.classList.add("is-leaving");
-      finish(60);
-      return;
-    }
-    var steps = [
-      [0, "is-opening"],
-      [780, "is-flapped"],
-      [900, "is-card"],
-      [2300, "is-leaving"]
-    ];
-    steps.forEach(function (s) { setTimeout(function () { intro.classList.add(s[1]); }, s[0]); });
-    setTimeout(function () {
-      root.classList.remove("is-locked");
-      body.classList.add("is-opened");
-    }, 2350);
-    setTimeout(function () { intro.remove(); measure(); }, 3500);
-  }
-  function finish(delay) {
-    root.classList.remove("is-locked");
-    body.classList.add("is-opened");
-    setTimeout(function () { intro.remove(); measure(); }, delay);
+    playMusic();
+    intro.classList.add("is-open");
+    // обложка начинает проявляться, пока занавес ещё расходится
+    setTimeout(reveal, reduceMotion ? 50 : 700);
+    setTimeout(function () { intro.remove(); }, reduceMotion ? 700 : 2400);
   }
 
   if (intro && openBtn) {
+    window.scrollTo(0, 0);
     root.classList.add("is-locked");
+    var show = function () { requestAnimationFrame(function () { intro.classList.add("is-ready"); }); };
+    var sealImg = openBtn.querySelector("img");
+    if (sealImg && !sealImg.complete) {
+      sealImg.addEventListener("load", show);
+      sealImg.addEventListener("error", show);
+      setTimeout(show, 2500);
+    } else {
+      show();
+    }
     openBtn.addEventListener("click", openInvitation);
   } else {
-    opened = true;
-    body.classList.add("is-opened");
+    reveal();
   }
 
-  /* ---------- Плавные появления при прокрутке ----------
-     data-reveal       — выезд слева с проявлением из расфокуса
-     data-reveal="up"  — карточки поднимаются снизу
-     data-inview       — блоки со своей хореографией (календарь, программа, палитра)
-     data-bloom        — цветы «распускаются»                                   */
-  document.querySelectorAll(".sec, .finale").forEach(function (sec) {
-    var i = 0;
-    sec.querySelectorAll("[data-reveal]").forEach(function (el) { el.style.setProperty("--i", i++); });
+  /* ---------- Плавные появления при прокрутке ---------- */
+  document.querySelectorAll(".col").forEach(function (col) {
+    col.querySelectorAll("[data-reveal]").forEach(function (el, i) { el.style.setProperty("--i", i % 4); });
   });
-  document.querySelectorAll(".cal").forEach(function (cal) {
-    cal.querySelectorAll(":scope > span").forEach(function (el, i) { el.style.setProperty("--i", i); });
-  });
-  document.querySelectorAll(".palette").forEach(function (p) {
-    p.querySelectorAll("li").forEach(function (el, i) { el.style.setProperty("--i", i); });
-  });
+  document.querySelectorAll(".cal > span").forEach(function (el, i) { el.style.setProperty("--i", i); });
+  document.querySelectorAll(".prog li").forEach(function (el, i) { el.style.setProperty("--i", i); });
+  document.querySelectorAll(".swatches li").forEach(function (el, i) { el.style.setProperty("--i", i); });
 
-  var watched = document.querySelectorAll("[data-reveal], [data-inview], [data-bloom]");
-  if ("IntersectionObserver" in window && !reduceMotion) {
+  var watched = document.querySelectorAll("[data-reveal], [data-inview]");
+  if ("IntersectionObserver" in window) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
         if (e.isIntersecting) {
@@ -128,47 +86,50 @@
           io.unobserve(e.target);
         }
       });
-    }, { rootMargin: "0px 0px -10% 0px", threshold: 0.01 });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.01 });
     watched.forEach(function (el) { io.observe(el); });
   } else {
     watched.forEach(function (el) { el.classList.add("is-in"); });
   }
 
-  /* ---------- Параллакс цветов на обложке ---------- */
-  var parallaxItems = [].map.call(document.querySelectorAll("[data-parallax]"), function (el) {
-    return { el: el, amount: parseFloat(el.getAttribute("data-parallax")) || 0, top: 0, h: 0 };
-  });
-  var vh = window.innerHeight;
+  /* ---------- Анкета → Google Форма ---------- */
+  var form = document.getElementById("rsvp-form");
+  var done = document.getElementById("rsvp-done");
+  var errBox = document.getElementById("rsvp-error");
 
-  function docTop(el) {
-    var y = 0;
-    while (el) { y += el.offsetTop; el = el.offsetParent; }
-    return y;
+  function showError(msg) {
+    errBox.textContent = msg;
+    errBox.hidden = false;
   }
-  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
-  function measure() {
-    vh = window.innerHeight;
-    parallaxItems.forEach(function (it) { it.top = docTop(it.el.parentNode); it.h = it.el.parentNode.offsetHeight; });
-    update();
+  if (form && window.fetch) {
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      errBox.hidden = true;
+      var name = form.elements["entry.225506798"];
+      var answer = form.querySelector('input[name="entry.87327526"]:checked');
+      if (!name.value.trim()) { showError("Пожалуйста, напишите имя и фамилию."); name.focus(); return; }
+      if (!answer) { showError("Пожалуйста, выберите вариант ответа."); return; }
+
+      var btn = form.querySelector(".btn");
+      btn.classList.add("is-busy");
+      var data = new URLSearchParams();
+      data.append("entry.225506798", name.value.trim());
+      data.append("entry.87327526", answer.value);
+
+      // Google Формы не отвечают на CORS-запросы, поэтому ответ «непрозрачный»:
+      // успешная отправка = запрос дошёл без сетевой ошибки
+      fetch(form.action, { method: "POST", mode: "no-cors", body: data })
+        .then(function () {
+          form.hidden = true;
+          done.hidden = false;
+          done.focus({ preventScroll: true });
+        })
+        .catch(function () {
+          btn.classList.remove("is-busy");
+          showError("Не получилось отправить. Проверьте интернет и попробуйте ещё раз.");
+        });
+    });
   }
-  function update() {
-    if (reduceMotion) return;
-    var y = window.pageYOffset;
-    for (var i = 0; i < parallaxItems.length; i++) {
-      var it = parallaxItems[i];
-      var q = clamp((y - it.top) / Math.max(1, it.h), 0, 1);
-      it.el.style.transform = "translate3d(0," + (it.amount * q).toFixed(1) + "px,0)";
-    }
-  }
-  var ticking = false;
-  window.addEventListener("scroll", function () {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function () { ticking = false; update(); });
-  }, { passive: true });
-  window.addEventListener("resize", function () { requestAnimationFrame(measure); });
-  window.addEventListener("load", measure);
-  measure();
 
   /* ---------- Обратный отсчёт ---------- */
   var target = new Date("2027-07-21T15:00:00+03:00").getTime();
@@ -199,10 +160,10 @@
         var text = u === "days" ? String(v[u]) : pad(v[u]);
         if (num.textContent !== text) {
           num.textContent = text;
-          if (!reduceMotion && num.animate && started) {
+          if (started && !reduceMotion && num.animate) {
             num.animate(
-              [{ transform: "translateY(-30%)", opacity: 0, filter: "blur(3px)" }, { transform: "none", opacity: 1, filter: "blur(0)" }],
-              { duration: 560, easing: "cubic-bezier(.23,1,.32,1)" }
+              [{ transform: "translateY(-24%)", opacity: 0, filter: "blur(3px)" }, { transform: "none", opacity: 1, filter: "blur(0)" }],
+              { duration: 420, easing: "cubic-bezier(.23,1,.32,1)" }
             );
           }
         }
