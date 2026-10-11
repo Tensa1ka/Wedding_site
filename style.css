@@ -47,7 +47,7 @@ html.is-locked, html.is-locked body { overflow: hidden; }
 body {
   margin: 0;
   min-width: 300px;
-  background: #f1efe8 url(assets/img/tulle.webp) repeat center top / 1200px auto;
+  background: #f2f0ea url(assets/img/tulle.webp) repeat center top / max(764px, 100vw) auto;   /* на широких экранах – одна симметричная драпировка */
   color: var(--ink);
   font-family: var(--serif);
   font-weight: 500;
@@ -131,10 +131,17 @@ h1, h2, h3, p { margin: 0; }
   background:
     linear-gradient(180deg, rgba(4, 5, 0, .55), rgba(4, 5, 0, 0) 10%),
     linear-gradient(0deg, rgba(4, 5, 0, .4), rgba(4, 5, 0, 0) 16%),
-    linear-gradient(to left, rgba(4, 5, 0, 0) 90%, rgba(4, 5, 0, .45)),
-    var(--velvet) url(assets/img/velvet.webp) repeat-x 0 0 / auto 100%;
+    var(--velvet) url(assets/img/velvet.webp) center / cover no-repeat;
 }
-.curtain--l .strip > i { transform: scaleX(-1); }     /* левое полотно зеркально: складки перекрещиваются */
+/* на широких экранах – зеркальная пара кадров, повторяется по горизонтали */
+@media (min-aspect-ratio: 3/4) {
+  .strip > i {
+    background:
+      linear-gradient(180deg, rgba(4, 5, 0, .55), rgba(4, 5, 0, 0) 10%),
+      linear-gradient(0deg, rgba(4, 5, 0, .4), rgba(4, 5, 0, 0) 16%),
+      var(--velvet) url(assets/img/velvet-wide.webp) center / auto 100% repeat-x;
+  }
+}
 
 .intro__center {
   position: relative;
@@ -148,8 +155,8 @@ h1, h2, h3, p { margin: 0; }
 }
 .seal {
   position: relative;
-  width: min(56vw, 42svh, 330px);
-  aspect-ratio: 1;
+  width: min(48vw, 36svh, 290px);
+  aspect-ratio: 443 / 459;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -165,7 +172,7 @@ h1, h2, h3, p { margin: 0; }
   .seal:hover { transform: scale(1.03); }
   .seal:active { transform: scale(.96); transition-duration: .16s; }
 }
-.seal__img { width: 100%; height: 100%; animation: seal-float 5s ease-in-out infinite alternate; }
+.seal__img { width: 100%; height: 100%; filter: drop-shadow(0 14px 18px rgba(0, 0, 0, .45)); animation: seal-float 5s ease-in-out infinite alternate; }
 @keyframes seal-float { from { transform: translateY(3px) rotate(.8deg); } to { transform: translateY(-4px) rotate(-1deg); } }
 /* блик, пробегающий по воску */
 .seal__shine {
@@ -234,17 +241,18 @@ h1, h2, h3, p { margin: 0; }
   align-items: center;
   min-height: 100vh;
   min-height: 100svh;
-  padding: clamp(28px, 6svh, 90px) 0 clamp(96px, 16svh, 200px);
+  --fw: min(118vw, 100svh, 820px);   /* ширина цветов сверху: кисти свисают по бокам от заголовка */
+  padding: max(clamp(28px, 6svh, 90px), var(--fw) * .22) 0 clamp(96px, 16svh, 200px);
   transform-origin: 50% 45%;
 }
-.hero__vines, .sec__vines {
+.hero__flowers {
   position: absolute;
   top: 0;
   left: 50%;
-  width: max(100vw, 560px);
+  z-index: 0;
+  width: var(--fw);
   max-width: none;
-  margin-left: calc(max(100vw, 560px) / -2);
-  opacity: .7;
+  margin: calc(var(--fw) * -.13) 0 0 calc(var(--fw) / -2);   /* пышная часть – у верхнего края, кисти свисают по бокам */
   pointer-events: none;
 }
 .hero__col { display: flex; flex-direction: column; align-items: center; z-index: 1; }
@@ -255,11 +263,12 @@ h1, h2, h3, p { margin: 0; }
   letter-spacing: .05em;
   text-transform: uppercase;
   color: var(--olive);
+  text-shadow: 0 0 14px rgba(250, 249, 243, .95), 0 0 4px rgba(250, 249, 243, .9);   /* читается поверх свисающей зелени */
 }
 .hero__kicker span { display: inline-block; white-space: pre; }
 .heart {
   position: relative;
-  width: min(106cqi, 66svh * 1.079);
+  width: min(104cqi, 62svh * 1.031);
   margin: clamp(4px, 1.5svh, 18px) 0 0;
   container-type: inline-size;
 }
@@ -284,7 +293,7 @@ h1, h2, h3, p { margin: 0; }
 }
 .heart__text {
   position: absolute;
-  inset: 19% 18% 31%;
+  inset: 22% 21% 29%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -327,19 +336,6 @@ h1, h2, h3, p { margin: 0; }
 .scroll-hint svg { width: 22px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; animation: nudge 2.4s ease-in-out infinite; }
 @keyframes nudge { 50% { transform: translateY(5px); } }
 
-.bouquet {
-  position: absolute;
-  bottom: 0;
-  z-index: 2;
-  width: clamp(200px, 30vw + 90px, 640px);
-  max-width: none;
-  pointer-events: none;
-  -webkit-mask-image: linear-gradient(to top, transparent, #000 16%);
-  mask-image: linear-gradient(to top, transparent, #000 16%);
-}
-.bouquet--hl { left: -6%; transform-origin: 10% 100%; }
-.bouquet--hr { right: -6%; transform-origin: 50% 100%; scale: -1 1; }
-
 /* световая пыль в лучах */
 .dust { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .dust i {
@@ -361,17 +357,15 @@ h1, h2, h3, p { margin: 0; }
 
 /* --- обложка после открытия занавеса --- */
 .js .hero__stage { scale: 1.07; }
-.js .hero__vines { opacity: 0; translate: 0 -8%; }
+.js .hero__flowers { opacity: 0; translate: 0 -10%; }
 .js .hero__kicker span { opacity: 0; translate: 0 .5em; filter: blur(5px); }
 .js .heart__img { opacity: 0; scale: .9; }
 .js .heart__names span { clip-path: inset(-30% 104% -30% -12%); }
 .js .heart__date, .js .scroll-hint { opacity: 0; translate: 0 12px; }
-.js .bouquet--hl { opacity: 0; translate: -4% 26%; rotate: -7deg; }
-.js .bouquet--hr { opacity: 0; translate: 4% 26%; rotate: 7deg; }
 .js .dust { opacity: 0; }
 
 .is-opened .hero__stage { scale: 1; transition: scale 3s var(--ease-out-soft) .1s; }
-.is-opened .hero__vines { opacity: .7; translate: 0 0; transition: opacity 2.2s ease .25s, translate 3s var(--ease-out-soft) .25s; }
+.is-opened .hero__flowers { opacity: 1; translate: 0 0; transition: opacity 1.8s ease .35s, translate 2.6s var(--ease-settle) .35s; }
 .is-opened .hero__kicker span { opacity: 1; translate: 0 0; filter: blur(0); transition: opacity .9s ease, translate 1.1s var(--ease-out), filter .9s ease; transition-delay: calc(.85s + var(--i, 0) * 45ms); }
 .is-opened .heart__img { opacity: 1; scale: 1; transition: opacity 1.4s ease 1s, scale 2.2s var(--ease-out-soft) 1s; }
 .is-opened .heart__shine::before { translate: 60% 0; transition: translate 1.8s var(--ease-in-out) 2.5s; }
@@ -379,11 +373,8 @@ h1, h2, h3, p { margin: 0; }
 .is-opened .heart__names span:last-child { transition-delay: 2.15s; }
 .is-opened .heart__date { opacity: 1; translate: 0 0; transition: opacity 1s ease 2.9s, translate 1.3s var(--ease-out) 2.9s; }
 .is-opened .scroll-hint { opacity: 1; translate: 0 0; transition: opacity 1s ease 3.4s, translate 1.3s var(--ease-out) 3.4s; }
-.is-opened .bouquet { opacity: 1; translate: 0 0; rotate: 0deg; transition: opacity 1.2s ease .55s, translate 2.2s var(--ease-settle) .55s, rotate 2.6s var(--ease-settle) .55s; }
-.is-opened .bouquet--hr { transition-delay: .7s; }
 .is-opened .dust { opacity: 1; transition: opacity 3s ease 1.5s; }
-.is-settled .bouquet { animation: sway 12s ease-in-out infinite; }
-.is-settled .bouquet--hr { animation-duration: 14s; }
+.is-settled .hero__flowers { transform-origin: 50% 0; animation: hang 12s ease-in-out infinite; }
 @keyframes sway { 0%, 100% { rotate: 0deg; } 25% { rotate: 1.3deg; } 75% { rotate: -1.2deg; } }
 
 /* =========================================================
@@ -406,17 +397,17 @@ main { overflow-x: hidden; overflow-x: clip; }
 .arch__body { position: relative; z-index: 1; }
 .garland {
   position: absolute;
-  top: -9cqi;
+  top: -11cqi;
+  left: 50%;
   z-index: 2;
-  width: 50cqi;
+  width: 100cqi;
   max-width: none;
+  margin-left: -50cqi;
   pointer-events: none;
+  transform-origin: 50% 0;
 }
-.garland--l { left: -9cqi; transform-origin: 20% 0; }
-.garland--r { right: -9cqi; transform-origin: 50% 0; scale: -1 1; }
 .js .garland { opacity: 0; }
-.arch.is-in .garland { animation: garland-in 2.4s var(--ease-out) .25s both, hang 9s ease-in-out 2.65s infinite; }
-.arch.is-in .garland--r { animation-delay: .4s, 2.8s; animation-duration: 2.4s, 11s; }
+.arch.is-in .garland { animation: garland-in 2.4s var(--ease-out) .25s both, hang 10s ease-in-out 2.65s infinite; }
 @keyframes garland-in {
   0% { opacity: 0; rotate: -9deg; translate: 0 -10%; }
   35% { opacity: 1; }
@@ -425,7 +416,7 @@ main { overflow-x: hidden; overflow-x: clip; }
   90% { rotate: .6deg; }
   100% { opacity: 1; rotate: 0deg; translate: 0 0; }
 }
-@keyframes hang { 0%, 100% { opacity: 1; rotate: 0deg; } 50% { opacity: 1; rotate: 1.5deg; } }
+@keyframes hang { 0%, 100% { opacity: 1; rotate: 0deg; } 30% { opacity: 1; rotate: .9deg; } 70% { opacity: 1; rotate: -.8deg; } }
 
 /* ---------- Календарь ---------- */
 .cal {
@@ -462,26 +453,25 @@ main { overflow-x: hidden; overflow-x: clip; }
 
 /* ---------- Адрес ---------- */
 .sec--place { padding-bottom: clamp(48px, 9vw, 120px); }
-.sec__vines { opacity: .55; }
-.oval { position: relative; width: 92cqi; margin: 0 auto; container-type: inline-size; }
+.oval { position: relative; width: 96cqi; margin: 0 auto; container-type: inline-size; }
 .oval__img { width: 100%; filter: drop-shadow(0 22px 30px rgba(60, 62, 40, .14)); }
 .oval__text {
   position: absolute;
-  inset: 21% 19% 21%;
+  inset: 21.5% 23% 21%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
-.oval .title { font-size: 13.5cqi; }
-.venue { margin-top: .6em; font-weight: 600; font-size: 5.3cqi; letter-spacing: .05em; text-transform: uppercase; color: var(--ink); }
-.oval .text { margin-top: .5em; font-size: 4.9cqi; }
-.oval .text--note { margin-top: .6em; font-size: 4.25cqi; max-width: 13em; }
+.oval .title { font-size: 12.4cqi; }
+.venue { margin-top: .5em; font-weight: 600; font-size: 4.5cqi; letter-spacing: .03em; text-transform: uppercase; color: var(--ink); }
+.oval .text { margin-top: .45em; font-size: 4.5cqi; }
+.oval .text--note { margin-top: .55em; font-size: 3.95cqi; max-width: 12.5em; }
 .link {
   display: inline-block;
-  margin-top: 1.1em;
+  margin-top: .9em;
   padding: .2em .1em;
-  font-size: 4.9cqi;
+  font-size: 4.5cqi;
   font-weight: 600;
   color: var(--olive);
   text-decoration: none;
@@ -492,54 +482,32 @@ main { overflow-x: hidden; overflow-x: clip; }
 @media (hover: hover) and (pointer: fine) {
   .link:hover { background-size: 0 1px; background-position: 100% 100%; }
 }
-.callas {
-  position: absolute;
-  left: -5cqi;
-  bottom: 0;
-  z-index: 2;
-  width: 26cqi;
-  max-width: none;
-  pointer-events: none;
-  transform-origin: 50% 100%;
-}
 
 /* ---------- Программа ---------- */
-.frame { position: relative; width: 92cqi; margin: 0 auto; container-type: inline-size; }
+.frame { position: relative; width: 96cqi; margin: 0 auto; container-type: inline-size; }
 .frame__img { width: 100%; }
 .frame__card {
   position: absolute;
-  inset: 16.2% 14.6% 13%;
+  inset: 20.5% 24% 17.5% 11.5%;   /* бумажная карточка на раме; справа внизу – каллы */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 5cqi;
-  background: var(--card) var(--noise);
-  box-shadow: 0 10px 24px -14px rgba(40, 40, 30, .5), inset 0 0 0 1px rgba(120, 112, 98, .2);
 }
-.frame .title { font-size: 12.8cqi; }
-.prog { margin: 4cqi 0 0; padding: 0; list-style: none; }
+.frame .title { font-size: 11.6cqi; }
+.prog { margin: 2.4cqi 0 0; padding: 0; list-style: none; }
 .prog li { display: flex; flex-direction: column; align-items: center; }
 .prog li + li::before {
   content: "";
   display: block;
   width: 1.5px;
-  height: 4.6cqi;
-  margin: 1.8cqi 0 2cqi;
+  height: 3.2cqi;
+  margin: 1.3cqi 0 1.5cqi;
   background: var(--ink);
   transform-origin: top;
 }
-.prog time { font-family: var(--script); font-size: 9.4cqi; line-height: 1.05; color: var(--olive-ink); }
-.prog span { font-size: 5cqi; line-height: 1.2; color: var(--ink); }
-.frame__flowers {
-  position: absolute;
-  right: -8cqi;
-  bottom: -1cqi;
-  width: 40cqi;
-  max-width: none;
-  pointer-events: none;
-  transform-origin: 60% 85%;
-}
+.prog time { font-family: var(--script); font-size: 8.2cqi; line-height: 1.05; color: var(--olive-ink); }
+.prog span { font-size: 4.6cqi; line-height: 1.2; color: var(--ink); }
 
 /* ---------- Дресс-код · Фото · Анкета ---------- */
 .panel {
@@ -712,9 +680,9 @@ main { overflow-x: hidden; overflow-x: clip; }
 .finale__flowers {
   position: relative;
   left: 50%;
-  width: min(100vw, 1180px);
+  width: min(104vw, 760px);
   max-width: none;
-  margin: -2vw 0 0;
+  margin: 2vw 0 0;
   translate: -50% 0;
   pointer-events: none;
   transform-origin: 50% 100%;
@@ -827,19 +795,14 @@ main { overflow-x: hidden; overflow-x: clip; }
 /* =========================================================
    Адаптация
    ========================================================= */
-@media (min-width: 1100px) {
-  .bouquet--hl { left: -2%; }
-  .bouquet--hr { right: -2%; }
-}
 @media (min-aspect-ratio: 5/4) and (min-width: 900px) {
   .hero__stage { padding-bottom: clamp(40px, 7svh, 110px); }
-  .heart { width: min(106cqi, 58svh * 1.079); }
+  .heart { width: min(104cqi, 56svh * 1.031); }
 }
 @media (max-height: 560px) and (orientation: landscape) {
-  .hero__stage { padding-block: 18px 40px; }
+  .hero__stage { --fw: min(118vw, 70svh); padding-block: max(18px, var(--fw) * .22) 40px; }
   .hero__kicker { font-size: clamp(18px, 5svh, 30px); }
-  .heart { width: min(106cqi, 70svh * 1.079); }
-  .bouquet { width: clamp(160px, 22vw, 320px); }
+  .heart { width: min(104cqi, 58svh * 1.031); }
   .scroll-hint { display: none; }
   .seal { width: min(40vw, 52svh, 300px); }
 }
@@ -851,14 +814,12 @@ main { overflow-x: hidden; overflow-x: clip; }
   html { scroll-behavior: auto; }
   .seal__img, .seal__shine, .seal__shine::before, .intro.is-ready .intro__hint, .scroll-hint svg, .dust { animation: none !important; }
   .dust { display: none; }
-  .is-settled .bouquet, [data-bloom].is-settled, .arch.is-in .garland { animation: none !important; opacity: 1; }
+  .is-settled .hero__flowers, [data-bloom].is-settled, .arch.is-in .garland { animation: none !important; opacity: 1; }
   .js [data-reveal], .js [data-bloom], .js .cal > span, .js .prog li > *, .js .swatches li, .js .swatches i,
   .js .rsvp .field__label, .js .rsvp .radio, .js .rsvp .btn, .js .countdown, .js .countdown div, .js .countdown em,
-  .js .hero__stage, .js .hero__vines, .js .hero__kicker span, .js .heart__img, .js .heart__date, .js .scroll-hint, .js .bouquet {
+  .js .hero__stage, .js .hero__flowers, .js .hero__kicker span, .js .heart__img, .js .heart__date, .js .scroll-hint {
     translate: none !important; rotate: none !important; scale: none !important; filter: none !important;
   }
-  .bouquet--hr { scale: -1 1 !important; }
-  .garland--r { scale: -1 1 !important; }
   .finale__flowers { translate: -50% 0 !important; }
   .js [data-write] > .ink, .js .heart__names span { clip-path: none !important; }
   .js [data-write] > .ink { opacity: 0; }

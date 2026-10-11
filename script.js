@@ -68,6 +68,8 @@
   var GATHER = 0.16;           // доля ширины, в которую собирается полотно
   var opened = false;
 
+  var FULL = 100 / 50.8;                           // ширина экрана в долях полотна (.curtain – 50.8%)
+
   function buildCurtain(curtain, side) {
     var w = 100 / STRIPS;
     for (var k = 0; k < STRIPS; k++) {             // k = 0 у стены, k = STRIPS-1 у шва
@@ -78,10 +80,12 @@
       strip.style.width = (w + 0.5) + "%";         // лёгкий нахлёст – без щелей
       strip.style.transformOrigin = side === "l" ? "0 50%" : "100% 50%";
       strip.dataset.k = k;
+      // ткань каждой полосы – общий кадр шириной во весь экран, сдвинутый к месту полосы
       var cloth = document.createElement("i");
-      cloth.style.width = (STRIPS * 100 / (1 + 0.5 / w)) + "%";
-      cloth.style.left = (-j * 100 / (1 + 0.5 / w)) + "%";
-      if (side === "r") cloth.style.backgroundPosition = "0 0, 0 0, 0 0, 37% 0";
+      var stripW = (w + 0.5) / 100;                              // доля ширины полотна
+      var offset = (side === "r" ? FULL - 1 : 0) + j * w / 100;  // от левого края экрана
+      cloth.style.width = (FULL / stripW * 100) + "%";
+      cloth.style.left = (-offset / stripW * 100) + "%";
       strip.appendChild(cloth);
       curtain.appendChild(strip);
     }
