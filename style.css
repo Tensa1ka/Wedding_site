@@ -431,8 +431,8 @@ main { overflow-x: hidden; overflow-x: clip; }
 .cal {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  row-gap: 1.2cqi;
-  width: 70cqi;
+  row-gap: 1.4cqi;
+  width: 76cqi;
   margin: 6cqi auto 0;
   font-family: var(--script);
   font-size: 7.4cqi;
@@ -445,9 +445,9 @@ main { overflow-x: hidden; overflow-x: clip; }
 .cal__day svg {
   position: absolute;
   left: 50%;
-  top: 56%;
-  width: 2.2em;
-  height: 2em;
+  top: 55%;
+  width: 1.62em;
+  height: 1.5em;
   transform: translate(-50%, -50%);
   overflow: visible;
 }
