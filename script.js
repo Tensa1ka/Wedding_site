@@ -262,6 +262,26 @@
     window.addEventListener("resize", function () { vh = window.innerHeight; tick(); });
   }
 
+  /* ---------- Фон-штора: едет вместе с прокруткой, без повторов ---------- */
+  var backdrop = document.querySelector(".backdrop img");
+  if (backdrop && !reduceMotion) {
+    var bdQueued = false;
+    var moveBackdrop = function () {
+      bdQueued = false;
+      var range = document.documentElement.scrollHeight - window.innerHeight;
+      var travel = backdrop.offsetHeight - window.innerHeight;
+      var p = range > 0 ? Math.min(1, Math.max(0, window.scrollY / range)) : 0;
+      backdrop.style.transform = "translate3d(0," + (-p * travel).toFixed(1) + "px,0)";
+    };
+    var queueBackdrop = function () {
+      if (!bdQueued) { bdQueued = true; requestAnimationFrame(moveBackdrop); }
+    };
+    window.addEventListener("scroll", queueBackdrop, { passive: true });
+    window.addEventListener("resize", queueBackdrop);
+    window.addEventListener("load", queueBackdrop);
+    moveBackdrop();
+  }
+
   /* ---------- Контур отсчёта – по форме «таблетки» ---------- */
   var cd = document.getElementById("countdown");
   var rect = cd && cd.querySelector(".countdown__line rect");

@@ -116,26 +116,6 @@ def text_mask(rgb, region, thr=10):
 
 # ---------- элементы ----------
 
-def heart():
-    rgb = load('sheet-decor.webp')[60:560, 10:520]
-    a = solidify(cut_checker(rgb, holes=25), 22)
-    # внутреннее поле сердца: светлая гладкая область в центре
-    lum = rgb.mean(2)
-    smooth = ndi.uniform_filter(lum, 9)
-    var = ndi.uniform_filter(lum ** 2, 9) - smooth ** 2
-    yy, xx = np.mgrid[:rgb.shape[0], :rgb.shape[1]]
-    region = (yy > 120) & (yy < 360) & (xx > 110) & (xx < 400)
-    m = text_mask(rgb, region, thr=9)
-    clean = inpaint(rgb, m)
-    clean = grain_like(clean, m, region & ~m)
-    return save('heart', clean, a)
-
-
-def tulle():
-    """Фон из ткани: зеркальная плитка 2×2 – повторяется без швов."""
-    rgb = load('sheet-decor.webp')[16:546, 566:948]
-    top = np.concatenate([rgb, rgb[:, ::-1]], 1)
-    return save('tulle', np.concatenate([top, top[::-1]], 0), quality=82)
 
 
 def flowers_top():
@@ -172,11 +152,6 @@ def frame():
     return save('frame', clean, erase(a, (684, 708, 0, 130)))
 
 
-def urns():
-    rgb = load('sheet-program.webp')[668:1024, 400:1134]
-    # низ рамки программы над вазами: лист y 668–712, x 690–860
-    return save('urns', rgb, erase(cut_checker(rgb), (0, 50, 250, 485)))
-
 
 def velvet():
     """Бархат: кадр целиком для телефонов и зеркальная пара для широких экранов."""
@@ -192,7 +167,100 @@ def seal():
     return save('seal', a[..., :3], a[..., 3] / 255)
 
 
-ALL = {f.__name__: f for f in (heart, tulle, flowers_top, flowers_arch, oval, frame, urns, velvet, seal)}
+# ---------- второй набор (цветы, сердце с кружевом, фон-штора, вазы-фото) ----------
+
+def load_rgba(name):
+    return np.asarray(Image.open(os.path.join(SRC, name)).convert('RGBA')).astype(float)
+
+
+def shrink(rgb, alpha, max_w):
+    """Уменьшает до max_w по ширине (картинки листов крупнее, чем нужно сайту)."""
+    h, w = rgb.shape[:2]
+    if w <= max_w:
+        return rgb, alpha
+    im = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), np.clip(alpha * 255, 0, 255)]).astype(np.uint8), 'RGBA')
+    im = im.resize((max_w, round(h * max_w / w)), Image.LANCZOS)
+    a = np.asarray(im).astype(float)
+    return a[..., :3], a[..., 3] / 255
+
+
+def heart_lace():
+    """Сердце с кружевом: имена и дата на картинке закрашиваются гладким кремовым тоном –
+    сайт пишет их сам, с анимацией."""
+    a = load_rgba('heart-lace.png')
+    rgb, alpha = a[..., :3].copy(), a[..., 3] / 255
+    H, W = alpha.shape
+    yy, xx = np.mgrid[:H, :W]
+    R, G, B = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    lum = rgb.mean(2)
+    box = (yy > H * .18) & (yy < H * .78) & (xx > W * .18) & (xx < W * .82)
+    # буквы оливковые (зелёный не слабее красного); золотой кант и жемчуг – тёплые, их не трогаем
+    ink = box & (lum < 228) & (G - R > -10) & (G - B > 8)
+    ink = ndi.binary_dilation(ink, iterations=5) & box
+    # гладкая поверхность поля: квадратичная подгонка по чистым кремовым пикселям
+    cream = box & ~ndi.binary_dilation(ink, iterations=4) & (np.linalg.norm(rgb - np.array([244, 239, 228]), axis=2) < 14)
+    X, Y = xx / W, yy / H
+    def terms(x, y):
+        return np.stack([np.ones_like(x), x, y, x * x, y * y, x * y], -1)
+    fill = np.zeros_like(rgb)
+    T = terms(X, Y)
+    for c in range(3):
+        coef, *_ = np.linalg.lstsq(T[cream], rgb[..., c][cream], rcond=None)
+        fill[..., c] = T @ coef
+    rng = np.random.default_rng(3)
+    fill += ndi.gaussian_filter(rng.normal(0, 1.3, (H, W)), .7)[..., None]
+    soft = np.clip(ndi.gaussian_filter(ink.astype(float), 2.5) * 1.6, 0, 1)[..., None]
+    rgb = rgb * (1 - soft) + fill * soft
+    rgb, alpha = shrink(rgb, alpha, 1000)
+    return save('heart', rgb, alpha)
+
+
+# букеты из листов: (лист, рамка x0, y0, x1, y1, имя)
+BLOOMS = [
+    ('flowers-a.png', (26, 15, 607, 679), 'bloom-corner-l'),
+    ('flowers-a.png', (905, 16, 1435, 685), 'bloom-corner-r'),
+    ('flowers-a.png', (601, 40, 906, 464), 'bloom-lily-rose'),
+    ('flowers-a.png', (858, 421, 1136, 816), 'bloom-lily'),
+    ('flowers-a.png', (512, 454, 883, 881), 'bloom-posy'),
+    ('flowers-a.png', (109, 505, 544, 833), 'bloom-roses'),
+    ('flowers-a.png', (1158, 568, 1370, 862), 'bloom-peony'),
+    ('flowers-a.png', (23, 729, 518, 1069), 'bloom-spray'),
+    ('flowers-b.png', (13, 650, 674, 1071), 'bloom-wide'),
+]
+
+
+def blooms():
+    cache = {}
+    for sheet, (x0, y0, x1, y1), name in BLOOMS:
+        if sheet not in cache:
+            a = load_rgba(sheet)
+            m = ndi.binary_closing(a[..., 3] > 20, iterations=4)
+            cache[sheet] = (a, ndi.label(m)[0])
+        a, lab = cache[sheet]
+        box = lab[y0:y1, x0:x1]
+        ids, cnt = np.unique(box[box > 0], return_counts=True)
+        own = box == ids[np.argmax(cnt)]                         # только свой букет, без соседей
+        own = ndi.binary_dilation(own, iterations=2)
+        rgb = a[y0:y1, x0:x1, :3]
+        alpha = a[y0:y1, x0:x1, 3] / 255 * own
+        rgb, alpha = shrink(rgb, alpha, 720)
+        save(name, rgb, alpha)
+
+
+def backdrop():
+    """Фон страницы – одна штора целиком (на сайте медленно едет при прокрутке)."""
+    return save('backdrop', load('backdrop.png'), quality=84)
+
+
+def urns_photo():
+    """Нижняя композиция – фото целиком; края растворяются в фоне средствами CSS."""
+    rgb = load('urns-photo.png')
+    im = Image.fromarray(rgb.astype(np.uint8)).resize((1600, round(rgb.shape[0] * 1600 / rgb.shape[1])), Image.LANCZOS)
+    return save('urns', np.asarray(im).astype(float), quality=84)
+
+
+ALL = {f.__name__: f for f in (flowers_top, flowers_arch, oval, frame, velvet, seal,
+                                     heart_lace, blooms, backdrop, urns_photo)}
 if __name__ == '__main__':
     for n in sys.argv[1:] or ALL:
         ALL[n.replace('-', '_')]()
