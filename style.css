@@ -101,6 +101,7 @@ h1, h2, h3, p { margin: 0; }
   align-items: center;
   justify-content: center;
   gap: clamp(14px, 3svh, 30px);
+  padding: 16px;   /* подпись не прижимается к краям на узких экранах */
   overflow: hidden;
   touch-action: none;
 }
