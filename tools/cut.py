@@ -137,34 +137,49 @@ def oval():
 
 
 def frame():
+    """Рама программы без бумаги: левая половина (резкая) отражается вправо, поле внутри
+    заливается тем же тауповым тоном. Бумажная карточка и цветы – отдельными слоями на сайте."""
     rgb = load('sheet-program.webp')[4:712, 540:996]
     a = solidify(cut_checker(rgb, holes=40), 24)
-    yy, xx = np.mgrid[:rgb.shape[0], :rgb.shape[1]]
-    # карточка: x 590..940, y 145..590 в листе → в кадре минус (540, 4)
-    region = (xx > 60) & (xx < 400) & (yy > 150) & (yy < 585)
-    m = text_mask(rgb, region, thr=12)
-    # цветы в правом нижнем углу не трогаем
-    flora = (xx > 276) & (yy > 455)
-    m &= ~flora
-    clean = inpaint(rgb, m, iters=900)
-    clean = grain_like(clean, m, region & ~m & ~flora)
-    # верхушка стебля из нижней композиции под рамкой
-    return save('frame', clean, erase(a, (684, 708, 0, 130)))
+    a = erase(a, (684, 708, 0, 130))
+    H, W = a.shape
+    # ось симметрии – середина силуэта
+    cols = np.where((a > .5).sum(0) > H * .3)[0]
+    c = (cols.min() + cols.max()) / 2
+    xs = np.arange(W)
+    src = np.clip(np.round(2 * c - xs).astype(int), 0, W - 1)
+    right = xs > c
+    rgb = rgb.copy()
+    rgb[:, right] = rgb[:, src[right]]
+    a = a.copy()
+    a[:, right] = a[:, src[right]]
+    # поле под бумагой (x 50..2c-50, y 137..586 в кадре): квадратичная подгонка по видимым кускам поля
+    yy, xx = np.mgrid[:H, :W]
+    fx0, fx1 = 52, int(round(2 * c - 52))                       # внутренний край багета – x 50
+    card = (xx >= fx0) & (xx <= fx1) & (yy >= 136) & (yy <= 588)
+    # тон поля – как у видимых полос над и под бывшей бумагой: светлее вверху, темнее к низу
+    top_c, bot_c = np.array([216., 204., 190.]), np.array([196., 182., 160.])
+    k = np.clip((yy - 136) / (588 - 136), 0, 1)[..., None] ** 2
+    fill = top_c * (1 - k) + bot_c * k
+    # лёгкая тень у краёв поля, как под багетом
+    d = ndi.distance_transform_edt(card)
+    fill *= (1 - .1 * np.exp(-d / 7))[..., None]
+    rng = np.random.default_rng(11)
+    mottle = ndi.gaussian_filter(rng.normal(0, 1, (H, W)), 5)
+    mottle = ndi.gaussian_filter(rng.normal(0, 1, (H, W)), 3)
+    mottle *= 2.5 / mottle.std()                                  # пятнистость, как у видимого поля
+    fill += (mottle + ndi.gaussian_filter(rng.normal(0, 2.4, (H, W)), 1))[..., None]
+    soft = ndi.gaussian_filter(card.astype(float), 2.5)[..., None] * card[..., None]
+    soft = np.maximum(soft, ndi.binary_erosion(card, iterations=4)[..., None])
+    rgb = rgb * (1 - soft) + fill * soft
+    # чистый внешний контур: без светлой бахромы от шахматки
+    a = np.minimum(a, ndi.gaussian_filter(ndi.binary_erosion(a > .5, iterations=2).astype(float), .8))
+    print('frame field x', fx0, fx1, 'of', W, 'axis', c)
+    return save('frame', rgb, a)
 
 
 
-def velvet():
-    """Бархат: кадр целиком для телефонов и зеркальная пара для широких экранов."""
-    rgb = load('velvet.webp')
-    save('velvet', rgb, quality=84)
-    return save('velvet-wide', np.concatenate([rgb, rgb[:, ::-1]], 1), quality=84)
 
-
-def seal():
-    im = Image.open(os.path.join(SRC, 'seal.png')).convert('RGBA')
-    im = im.resize((im.width * 2, im.height * 2), Image.LANCZOS)
-    a = np.asarray(im).astype(float)
-    return save('seal', a[..., :3], a[..., 3] / 255)
 
 
 # ---------- второй набор (цветы, сердце с кружевом, фон-штора, вазы-фото) ----------
@@ -259,8 +274,46 @@ def urns_photo():
     return save('urns', np.asarray(im).astype(float), quality=84)
 
 
-ALL = {f.__name__: f for f in (flowers_top, flowers_arch, oval, frame, velvet, seal,
-                                     heart_lace, blooms, backdrop, urns_photo)}
+def envelope():
+    """Конверт для заставки: печать отдельно (уходит целиком, не ломаясь),
+    под ней – бумага, чтобы клапаны раскрывались без «дырки»."""
+    a = load_rgba('envelope.webp')
+    rgb, alpha = a[..., :3], a[..., 3] / 255
+    H, W = alpha.shape
+    cx, cy, r = 495, 873, 178
+    yy, xx = np.mgrid[:H, :W]
+    disk = (xx - cx) ** 2 + (yy - cy) ** 2 < r * r
+    R, G, B = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    gold = disk & ((R - B) > 80) & (R > 120)
+    gold = ndi.binary_fill_holes(ndi.binary_closing(gold, iterations=6))
+    gold = ndi.binary_opening(gold, iterations=4)                # отрезаем тонкие золотые веточки рядом
+    gold &= (xx - cx) ** 2 + (yy - cy) ** 2 < 162 ** 2
+    lab, n = ndi.label(gold)
+    gold = lab == (np.argmax(ndi.sum(gold, lab, range(1, n + 1))) + 1)
+    seal_a = ndi.gaussian_filter(ndi.binary_erosion(gold, iterations=1).astype(float), .9)
+    ys, xs = np.where(gold)
+    y0, y1, x0, x1 = ys.min() - 4, ys.max() + 5, xs.min() - 4, xs.max() + 5
+    save('env-seal', rgb[y0:y1, x0:x1], seal_a[y0:y1, x0:x1])
+    # бумага под печатью: гармоническое заполнение с запасом по краю (тень печати)
+    hole = ndi.binary_dilation(gold, iterations=14)
+    py0, py1, px0, px1 = y0 - 40, y1 + 40, x0 - 40, x1 + 40
+    sub = rgb[py0:py1, px0:px1]
+    m = hole[py0:py1, px0:px1]
+    small = Image.fromarray(np.clip(sub, 0, 255).astype(np.uint8)).resize((sub.shape[1] // 2, sub.shape[0] // 2), Image.LANCZOS)
+    ms = np.asarray(Image.fromarray(m.astype(np.uint8) * 255).resize(small.size, Image.BILINEAR)) > 20
+    filled = inpaint(np.asarray(small).astype(float), ms, iters=900)
+    up = np.asarray(Image.fromarray(np.clip(filled, 0, 255).astype(np.uint8)).resize((sub.shape[1], sub.shape[0]), Image.BICUBIC)).astype(float)
+    soft = ndi.gaussian_filter(m.astype(float), 3)[..., None]
+    rng = np.random.default_rng(5)
+    up += ndi.gaussian_filter(rng.normal(0, 2.2, up.shape[:2]), .8)[..., None]   # фактура бумаги
+    sub = sub * (1 - soft) + up * soft
+    rgb = rgb.copy()
+    rgb[py0:py1, px0:px1] = sub
+    return save('envelope', rgb, alpha, quality=86)
+
+
+ALL = {f.__name__: f for f in (flowers_top, flowers_arch, oval, frame,
+                                     heart_lace, blooms, backdrop, urns_photo, envelope)}
 if __name__ == '__main__':
     for n in sys.argv[1:] or ALL:
         ALL[n.replace('-', '_')]()
