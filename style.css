@@ -451,10 +451,10 @@ main { overflow-x: hidden; overflow-x: clip; }
   top: 52%;
   width: 1.8em;
   height: 1.8em;   /* ямка между долями – выше цифр, самая широкая часть – на уровне числа */
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, calc(-50% - 3px));   /* чуть выше – небольшой зазор над числом */
   overflow: visible;
 }
-.cal__day path, .rsvp-done path {
+.cal__day path {
   fill: none;
   stroke: var(--olive-soft);
   stroke-width: 1.8;
@@ -659,7 +659,7 @@ main { overflow-x: hidden; overflow-x: clip; }
 .btn.is-busy { opacity: .7; pointer-events: none; }
 .btn.is-busy span::after { content: "…"; }
 .rsvp-done { margin-top: 9cqi; outline: none; }
-.rsvp-done svg { width: 18cqi; height: auto; margin: 0 auto 3cqi; overflow: visible; }
+.rsvp-done__heart { display: block; width: 46cqi; height: auto; margin: 0 auto 2cqi; }
 
 /* ---------- Финал ---------- */
 .finale { position: relative; padding: clamp(28px, 6vw, 80px) 0 0; overflow: hidden; }
@@ -836,8 +836,8 @@ main { overflow-x: hidden; overflow-x: clip; }
 .js .countdown.is-in > :nth-child(7) { transition-delay: 1s; }
 .js .countdown.is-in > :nth-child(8) { transition-delay: 1.1s; }
 
-.rsvp-done:not([hidden]) path { animation: draw 1.4s var(--ease-in-out) .1s both; }
-@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.rsvp-done:not([hidden]) .rsvp-done__heart { animation: wreath-in 1.6s var(--ease-settle) .1s both; }
+@keyframes wreath-in { from { opacity: 0; scale: .7; rotate: -6deg; } 60% { opacity: 1; } to { opacity: 1; scale: 1; rotate: 0deg; } }
 
 /* =========================================================
    Адаптация
@@ -860,7 +860,7 @@ main { overflow-x: hidden; overflow-x: clip; }
    ========================================================= */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .seal__shine::before, .intro.is-ready .intro__hint, .scroll-hint svg, .dust { animation: none !important; }
+  .seal__shine::before, .intro.is-ready .intro__hint, .scroll-hint svg, .dust, .rsvp-done__heart { animation: none !important; }
   .dust { display: none; }
   .is-settled .hero__flowers, .is-settled .hero__bloom, [data-bloom].is-settled, .arch.is-in .garland { animation: none !important; opacity: 1; }
   .hero__bloom--r { scale: -1 1 !important; }
