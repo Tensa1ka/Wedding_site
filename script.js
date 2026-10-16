@@ -57,39 +57,14 @@
   }
 
   /* =========================================================
-     Лицо открытки: занавес из полос
-     Каждое полотно разрезано на вертикальные полосы. При открытии
-     передний край тянется к стене первым, полосы сжимаются и
-     собираются в складки, низ полотна отстаёт по инерции.
+     Лицо открытки: конверт
+     Печать поднимается целиком (не ломается) и уплывает вверх,
+     клапаны раскрываются по сгибам: верхний, нижний, затем боковые.
      ========================================================= */
   var intro = document.getElementById("intro");
   var openBtn = document.getElementById("intro-open");
-  var STRIPS = 9;
-  var GATHER = 0.16;           // доля ширины, в которую собирается полотно
+  var envelope = intro && intro.querySelector(".envelope");
   var opened = false;
-
-  var FULL = 100 / 50.8;                           // ширина экрана в долях полотна (.curtain – 50.8%)
-
-  function buildCurtain(curtain, side) {
-    var w = 100 / STRIPS;
-    for (var k = 0; k < STRIPS; k++) {             // k = 0 у стены, k = STRIPS-1 у шва
-      var j = side === "l" ? k : STRIPS - 1 - k;   // порядковый номер слева направо
-      var strip = document.createElement("div");
-      strip.className = "strip";
-      strip.style.left = (j * w) + "%";
-      strip.style.width = (w + 0.5) + "%";         // лёгкий нахлёст – без щелей
-      strip.style.transformOrigin = side === "l" ? "0 50%" : "100% 50%";
-      strip.dataset.k = k;
-      // ткань каждой полосы – общий кадр шириной во весь экран, сдвинутый к месту полосы
-      var cloth = document.createElement("i");
-      var stripW = (w + 0.5) / 100;                              // доля ширины полотна
-      var offset = (side === "r" ? FULL - 1 : 0) + j * w / 100;  // от левого края экрана
-      cloth.style.width = (FULL / stripW * 100) + "%";
-      cloth.style.left = (-offset / stripW * 100) + "%";
-      strip.appendChild(cloth);
-      curtain.appendChild(strip);
-    }
-  }
 
   function reveal() {
     root.classList.remove("is-locked");
@@ -111,65 +86,71 @@
       return;
     }
 
-    // печать: мягко приподнимается и растворяется, от неё расходится световое кольцо
+    var ease = "cubic-bezier(.23,1,.32,1)";
+    var fold = "cubic-bezier(.65,0,.35,1)";
+
+    // печать: короткий отклик, отрыв от бумаги и плавный уход вверх – целиком
     openBtn.animate(
-      [{ transform: "scale(1)", opacity: 1, filter: "blur(0)" },
-       { transform: "translateY(-3%) scale(1.14)", opacity: 0, filter: "blur(10px)" }],
-      { duration: 900, easing: "cubic-bezier(.23,1,.32,1)", fill: "forwards" }
+      [{ transform: "translateY(0) scale(1) rotate(0deg)", opacity: 1, offset: 0 },
+       { transform: "translateY(0) scale(.95) rotate(0deg)", opacity: 1, offset: .12 },
+       { transform: "translateY(-6%) scale(1.1) rotate(-4deg)", opacity: 1, offset: .4 },
+       { transform: "translateY(-120%) scale(1.02) rotate(-12deg)", opacity: 0, offset: 1 }],
+      { duration: 1500, easing: "cubic-bezier(.5,0,.3,1)", fill: "forwards" }
+    );
+    openBtn.querySelector(".seal__img").animate(
+      [{ filter: "drop-shadow(0 6px 8px rgba(60,40,5,.35))" },
+       { filter: "drop-shadow(0 26px 22px rgba(60,40,5,.28))" }],
+      { duration: 700, delay: 180, easing: ease, fill: "forwards" }
     );
     openBtn.querySelector(".seal__ring").animate(
-      [{ opacity: 0, transform: "scale(.9)" }, { opacity: 1, offset: .25 }, { opacity: 0, transform: "scale(2)" }],
-      { duration: 1200, easing: "cubic-bezier(.23,1,.32,1)", fill: "forwards" }
+      [{ opacity: 0, transform: "scale(.9)" }, { opacity: 1, offset: .25 }, { opacity: 0, transform: "scale(1.9)" }],
+      { duration: 1100, delay: 120, easing: ease, fill: "forwards" }
     );
-
-    // свет в щели занавеса
     intro.querySelector(".intro__glow").animate(
-      [{ opacity: 0 }, { opacity: 1, offset: .35 }, { opacity: .85, offset: .6 }, { opacity: 0 }],
-      { duration: 2900, easing: "ease-in-out", fill: "forwards" }
+      [{ opacity: 0 }, { opacity: 1, offset: .4 }, { opacity: 0 }],
+      { duration: 2400, delay: 500, easing: "ease-in-out", fill: "forwards" }
     );
 
-    var START = 260;
-    ["l", "r"].forEach(function (side) {
-      var curtain = intro.querySelector(".curtain--" + side);
-      var dir = side === "l" ? -1 : 1;
-
-      // полосы собираются к стене: передний край начинает первым
-      curtain.querySelectorAll(".strip").forEach(function (strip) {
-        var k = +strip.dataset.k;
-        var shift = dir * k * (1 - GATHER) * 100;
-        strip.animate(
-          [{ transform: "translateX(0) scaleX(1)" },
-           { transform: "translateX(" + shift + "%) scaleX(" + GATHER + ")" }],
-          { duration: 2000, delay: START + (STRIPS - 1 - k) * 34, easing: "cubic-bezier(.7,0,.22,1)", fill: "forwards" }
-        );
-      });
-
-      // инерция: низ полотна отстаёт, затем догоняет с затухающим покачиванием
-      curtain.animate(
-        [{ transform: "skewX(0deg)" },
-         { transform: "skewX(" + (-dir * 3) + "deg)", offset: .36 },
-         { transform: "skewX(" + (dir * 1) + "deg)", offset: .62 },
-         { transform: "skewX(" + (-dir * .4) + "deg)", offset: .82 },
-         { transform: "skewX(0deg)" }],
-        { duration: 2400, delay: START, easing: "ease-in-out", fill: "forwards" }
-      );
-
-      // собранные складки уходят за край
-      curtain.animate(
-        [{ translate: "0 0", opacity: 1 }, { translate: (dir * 22) + "% 0", opacity: 0 }],
-        { duration: 900, delay: START + 2050, easing: "cubic-bezier(.23,1,.32,1)", fill: "forwards" }
+    // клапаны раскрываются по сгибам (обратная сторона скрыта – за ними уже видна обложка)
+    var START = 620;
+    var flaps = [
+      ["t", "rotateX(0deg)", "rotateX(-178deg)", 0],
+      ["b", "rotateX(0deg)", "rotateX(178deg)", 170],
+      ["l", "rotateY(0deg)", "rotateY(178deg)", 330],
+      ["r", "rotateY(0deg)", "rotateY(-178deg)", 380]
+    ];
+    flaps.forEach(function (f) {
+      intro.querySelector(".env__flap--" + f[0]).animate(
+        [{ transform: f[1] }, { transform: f[2] }],
+        { duration: 1500, delay: START + f[3], easing: fold, fill: "forwards" }
       );
     });
 
-    setTimeout(reveal, START + 300);
-    setTimeout(function () { intro.remove(); }, START + 3100);
+    // конверт чуть приближается, дымка над страницей рассеивается
+    envelope.animate(
+      [{ transform: "scale(1)" }, { transform: "scale(1.12)" }],
+      { duration: 2300, delay: START, easing: ease, fill: "forwards" }
+    );
+    envelope.animate(
+      [{ filter: "drop-shadow(0 26px 34px rgba(70,58,30,.32))" }, { filter: "drop-shadow(0 26px 34px rgba(70,58,30,0))" }],
+      { duration: 900, delay: START + 300, easing: "ease-out", fill: "forwards" }
+    );
+    intro.querySelector(".intro__veil").animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { duration: 1500, delay: START + 250, easing: "ease-in-out", fill: "forwards" }
+    );
+    intro.animate(
+      [{ backgroundColor: "rgba(233,226,211,1)" }, { backgroundColor: "rgba(233,226,211,0)" }],
+      { duration: 1100, delay: START + 150, easing: "ease-out", fill: "forwards" }
+    );
+
+    setTimeout(reveal, START + 450);
+    setTimeout(function () { intro.remove(); }, START + 2500);
   }
 
   if (intro && openBtn) {
     window.scrollTo(0, 0);
     root.classList.add("is-locked");
-    buildCurtain(intro.querySelector(".curtain--l"), "l");
-    buildCurtain(intro.querySelector(".curtain--r"), "r");
     var shown = false;
     var show = function () {
       if (shown) return;
@@ -185,6 +166,7 @@
       show();
     }
     openBtn.addEventListener("click", openInvitation);
+    envelope.addEventListener("click", openInvitation);   // нажатие в любом месте конверта
   } else {
     reveal();
   }
