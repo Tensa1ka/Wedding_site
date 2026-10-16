@@ -18,6 +18,9 @@
 </head>
 <body>
 
+  <!-- фон: одна штора, медленно едет при прокрутке -->
+  <div class="backdrop" aria-hidden="true"><img src="assets/img/backdrop.webp" alt="" width="941" height="1672" decoding="async"></div>
+
   <!-- ============ ЛИЦО ОТКРЫТКИ: БАРХАТНЫЙ ЗАНАВЕС С ПЕЧАТЬЮ ============ -->
   <div class="intro" id="intro">
     <div class="intro__glow" aria-hidden="true"></div>
@@ -41,7 +44,7 @@
       <div class="col hero__col">
         <p class="hero__kicker" data-letters>Wedding Day</p>
         <div class="heart">
-          <img class="heart__img" src="assets/img/heart.webp" alt="" width="493" height="478">
+          <img class="heart__img" src="assets/img/heart.webp" alt="" width="1000" height="893">
           <span class="heart__shine" aria-hidden="true"></span>
           <div class="heart__text">
             <h1 class="heart__names">
@@ -56,6 +59,8 @@
           <svg viewBox="0 0 24 12" aria-hidden="true"><path d="M2 2l10 8 10-8"/></svg>
         </a>
       </div>
+      <img class="hero__bloom hero__bloom--l" src="assets/img/bloom-wide.webp" alt="" aria-hidden="true" width="661" height="421">
+      <img class="hero__bloom hero__bloom--r" src="assets/img/bloom-spray.webp" alt="" aria-hidden="true" width="495" height="340">
     </div>
   </header>
 
@@ -65,6 +70,8 @@
       <div class="col">
         <div class="arch" data-reveal="rise">
           <img class="garland" src="assets/img/flowers-arch.webp" alt="" aria-hidden="true" width="413" height="242" loading="lazy" decoding="async">
+          <img class="bloom bloom--arch-l" data-bloom src="assets/img/bloom-lily-rose.webp" alt="" aria-hidden="true" width="305" height="424" loading="lazy" decoding="async">
+          <img class="bloom bloom--arch-r" data-bloom src="assets/img/bloom-peony.webp" alt="" aria-hidden="true" width="212" height="294" loading="lazy" decoding="async">
           <div class="arch__body">
             <h2 class="title" data-write>Дорогие<br>родные и близкие!</h2>
             <p class="text" data-reveal>
@@ -99,6 +106,8 @@
         <div class="oval" data-reveal="frame">
           <img class="oval__img" src="assets/img/oval.webp" alt="" width="359" height="417" loading="lazy" decoding="async">
           <span class="shine shine--oval" aria-hidden="true"></span>
+          <img class="bloom bloom--oval-l" data-bloom src="assets/img/bloom-lily.webp" alt="" aria-hidden="true" width="278" height="395" loading="lazy" decoding="async">
+          <img class="bloom bloom--oval-b" data-bloom src="assets/img/bloom-roses.webp" alt="" aria-hidden="true" width="435" height="328" loading="lazy" decoding="async">
           <div class="oval__text">
             <h2 class="title" data-write>Адрес</h2>
             <p class="venue" data-reveal>«Хрустальный Сад»</p>
@@ -116,6 +125,7 @@
         <div class="frame" data-reveal="frame">
           <img class="frame__img" src="assets/img/frame.webp" alt="" width="452" height="702" loading="lazy" decoding="async">
           <span class="shine shine--frame" aria-hidden="true"></span>
+          <img class="bloom bloom--frame" data-bloom src="assets/img/bloom-posy.webp" alt="" aria-hidden="true" width="371" height="427" loading="lazy" decoding="async">
           <div class="frame__card">
             <h2 class="title" data-write>Программа</h2>
             <ol class="prog" data-inview>
@@ -133,6 +143,8 @@
     <section class="sec sec--panel">
       <div class="col">
         <div class="panel" data-reveal="rise">
+          <img class="bloom bloom--panel-l" data-bloom src="assets/img/bloom-corner-r.webp" alt="" aria-hidden="true" width="530" height="669" loading="lazy" decoding="async">
+          <img class="bloom bloom--panel-r" data-bloom src="assets/img/bloom-corner-l.webp" alt="" aria-hidden="true" width="581" height="664" loading="lazy" decoding="async">
           <div class="panel__part" id="dress">
             <h2 class="title" data-write>Дресс-код</h2>
             <p class="text" data-reveal>
@@ -207,7 +219,7 @@
         <div><b data-unit="seconds">00</b><span data-label="seconds">секунд</span></div>
       </div>
     </div>
-    <img class="finale__flowers" data-bloom src="assets/img/urns.webp" alt="" aria-hidden="true" width="730" height="355" loading="lazy" decoding="async">
+    <img class="finale__flowers" data-bloom src="assets/img/urns.webp" alt="" aria-hidden="true" width="1600" height="619" loading="lazy" decoding="async">
   </footer>
 
   <!-- ============ МУЗЫКА ============ -->

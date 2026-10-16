@@ -42,12 +42,12 @@
 @media (min-width: 1700px) { :root { --col: 660px; } }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; background: var(--velvet); }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; background: #f2f0ea; }
 html.is-locked, html.is-locked body { overflow: hidden; }
 body {
   margin: 0;
   min-width: 300px;
-  background: #f2f0ea url(assets/img/tulle.webp) repeat center top / max(764px, 100vw) auto;   /* на широких экранах – одна симметричная драпировка */
+  background: none;   /* фон – штора в .backdrop */
   color: var(--ink);
   font-family: var(--serif);
   font-weight: 500;
@@ -256,6 +256,16 @@ h1, h2, h3, p { margin: 0; }
   margin: calc(var(--fw) * -.13) 0 0 calc(var(--fw) / -2);   /* пышная часть – у верхнего края, кисти свисают по бокам */
   pointer-events: none;
 }
+.hero__bloom {
+  position: absolute;
+  bottom: 0;
+  z-index: 2;
+  width: clamp(190px, 30vw + 80px, 520px);
+  max-width: none;
+  pointer-events: none;
+}
+.hero__bloom--l { left: -9%; transform-origin: 15% 100%; }
+.hero__bloom--r { right: -8%; transform-origin: 85% 100%; scale: -1 1; }
 .hero__col { display: flex; flex-direction: column; align-items: center; z-index: 1; }
 .hero__kicker {
   font-family: var(--serif);
@@ -269,7 +279,7 @@ h1, h2, h3, p { margin: 0; }
 .hero__kicker span { display: inline-block; white-space: pre; }
 .heart {
   position: relative;
-  width: min(104cqi, 62svh * 1.031);
+  width: min(108cqi, 60svh * 1.12);
   margin: clamp(4px, 1.5svh, 18px) 0 0;
   container-type: inline-size;
 }
@@ -294,7 +304,7 @@ h1, h2, h3, p { margin: 0; }
 }
 .heart__text {
   position: absolute;
-  inset: 22% 21% 29%;
+  inset: 21% 22% 28%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -364,6 +374,8 @@ h1, h2, h3, p { margin: 0; }
 .js .heart__names span { clip-path: inset(-30% 104% -30% -12%); }
 .js .heart__date, .js .scroll-hint { opacity: 0; translate: 0 12px; }
 .js .dust { opacity: 0; }
+.js .hero__bloom--l { opacity: 0; translate: -5% 24%; rotate: -6deg; }
+.js .hero__bloom--r { opacity: 0; translate: 5% 24%; rotate: 6deg; }
 
 .is-opened .hero__stage { scale: 1; transition: scale 3s var(--ease-out-soft) .1s; }
 .is-opened .hero__flowers { opacity: 1; translate: 0 0; transition: opacity 1.8s ease .35s, translate 2.6s var(--ease-settle) .35s; }
@@ -375,6 +387,10 @@ h1, h2, h3, p { margin: 0; }
 .is-opened .heart__date { opacity: 1; translate: 0 0; transition: opacity 1s ease 2.9s, translate 1.3s var(--ease-out) 2.9s; }
 .is-opened .scroll-hint { opacity: 1; translate: 0 0; transition: opacity 1s ease 3.4s, translate 1.3s var(--ease-out) 3.4s; }
 .is-opened .dust { opacity: 1; transition: opacity 3s ease 1.5s; }
+.is-opened .hero__bloom { opacity: 1; translate: 0 0; rotate: 0deg; transition: opacity 1.2s ease .6s, translate 2.2s var(--ease-settle) .6s, rotate 2.6s var(--ease-settle) .6s; }
+.is-opened .hero__bloom--r { transition-delay: .75s; }
+.is-settled .hero__bloom { animation: sway 12s ease-in-out infinite; }
+.is-settled .hero__bloom--r { animation-duration: 14s; }
 .is-settled .hero__flowers { transform-origin: 50% 0; animation: hang 12s ease-in-out infinite; }
 @keyframes sway { 0%, 100% { rotate: 0deg; } 25% { rotate: 1.3deg; } 75% { rotate: -1.2deg; } }
 
@@ -512,6 +528,7 @@ main { overflow-x: hidden; overflow-x: clip; }
 
 /* ---------- Дресс-код · Фото · Анкета ---------- */
 .panel {
+  position: relative;
   width: 94cqi;
   margin: 0 auto;
   padding: 24cqi 9cqi 22cqi;
@@ -681,9 +698,14 @@ main { overflow-x: hidden; overflow-x: clip; }
 .finale__flowers {
   position: relative;
   left: 50%;
-  width: min(104vw, 760px);
+  width: min(100vw, 1100px);
   max-width: none;
-  margin: 2vw 0 0;
+  margin: 0;
+  /* фото растворяется в фоне сверху и по бокам */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24%), linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, transparent, #000 24%), linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  mask-composite: intersect;
   translate: -50% 0;
   pointer-events: none;
   transform-origin: 50% 100%;
@@ -711,6 +733,32 @@ main { overflow-x: hidden; overflow-x: clip; }
 .music .music__off { opacity: 0; transform: scale(.8); }
 .music.is-playing .music__on { opacity: 0; transform: scale(.8); }
 .music.is-playing .music__off { opacity: 1; transform: none; }
+
+/* =========================================================
+   Фон: штора целиком, при прокрутке медленно едет – к концу страницы виден её низ
+   ========================================================= */
+.backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: #f2f0ea; }
+.backdrop img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: max(135vh, 177.7vw);   /* выше экрана: есть куда ехать */
+  max-width: none;
+  object-fit: cover;
+  object-position: 50% 0;
+  will-change: transform;
+}
+
+/* ---------- Цветы в декоре ---------- */
+.bloom { position: absolute; z-index: 3; max-width: none; pointer-events: none; }
+.bloom--arch-l { left: -10cqi; bottom: -8cqi; width: 30cqi; transform-origin: 40% 100%; }
+.bloom--arch-r { right: -7cqi; bottom: -6cqi; width: 23cqi; transform-origin: 50% 100%; }
+.bloom--oval-l { left: -9cqi; bottom: 4cqi; width: 26cqi; transform-origin: 50% 100%; }
+.bloom--oval-b { right: -6cqi; bottom: -7cqi; width: 40cqi; transform-origin: 60% 90%; }
+.bloom--frame { left: -9cqi; top: -3cqi; width: 27cqi; transform-origin: 30% 20%; }
+.bloom--panel-l { left: -13cqi; top: -9cqi; width: 36cqi; transform-origin: 20% 10%; }
+.bloom--panel-r { right: -13cqi; top: -9cqi; width: 38cqi; transform-origin: 80% 10%; }
 
 /* =========================================================
    Движение при прокрутке
@@ -798,12 +846,13 @@ main { overflow-x: hidden; overflow-x: clip; }
    ========================================================= */
 @media (min-aspect-ratio: 5/4) and (min-width: 900px) {
   .hero__stage { padding-bottom: clamp(40px, 7svh, 110px); }
-  .heart { width: min(104cqi, 56svh * 1.031); }
+  .heart { width: min(108cqi, 54svh * 1.12); }
 }
 @media (max-height: 560px) and (orientation: landscape) {
   .hero__stage { --fw: min(118vw, 70svh); padding-block: max(18px, var(--fw) * .22) 40px; }
   .hero__kicker { font-size: clamp(18px, 5svh, 30px); }
-  .heart { width: min(104cqi, 58svh * 1.031); }
+  .heart { width: min(108cqi, 56svh * 1.12); }
+  .hero__bloom { width: clamp(150px, 20vw, 300px); }
   .scroll-hint { display: none; }
   .seal { width: min(40vw, 52svh, 300px); }
 }
@@ -815,10 +864,11 @@ main { overflow-x: hidden; overflow-x: clip; }
   html { scroll-behavior: auto; }
   .seal__img, .seal__shine, .seal__shine::before, .intro.is-ready .intro__hint, .scroll-hint svg, .dust { animation: none !important; }
   .dust { display: none; }
-  .is-settled .hero__flowers, [data-bloom].is-settled, .arch.is-in .garland { animation: none !important; opacity: 1; }
+  .is-settled .hero__flowers, .is-settled .hero__bloom, [data-bloom].is-settled, .arch.is-in .garland { animation: none !important; opacity: 1; }
+  .hero__bloom--r { scale: -1 1 !important; }
   .js [data-reveal], .js [data-bloom], .js .cal > span, .js .prog li > *, .js .swatches li, .js .swatches i,
   .js .rsvp .field__label, .js .rsvp .radio, .js .rsvp .btn, .js .countdown, .js .countdown div, .js .countdown em,
-  .js .hero__stage, .js .hero__flowers, .js .hero__kicker span, .js .heart__img, .js .heart__date, .js .scroll-hint {
+  .js .hero__stage, .js .hero__flowers, .js .hero__bloom, .js .hero__kicker span, .js .heart__img, .js .heart__date, .js .scroll-hint {
     translate: none !important; rotate: none !important; scale: none !important; filter: none !important;
   }
   .finale__flowers { translate: -50% 0 !important; }
