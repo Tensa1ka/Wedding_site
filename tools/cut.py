@@ -312,8 +312,23 @@ def envelope():
     return save('envelope', rgb, alpha, quality=86)
 
 
+def heart_wreath():
+    """Сердце из цветов для «Спасибо» после анкеты: светлый ровный фон и середина – прозрачные."""
+    rgb = load('heart-wreath.webp')
+    bg = np.median(np.concatenate([rgb[:20].reshape(-1, 3), rgb[-20:].reshape(-1, 3)]), 0)
+    flat = (np.abs(rgb - bg).max(2) < 9)
+    lab, n = ndi.label(flat)
+    sizes = ndi.sum(flat, lab, range(1, n + 1))
+    edge = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
+    keep = np.isin(lab, edge[edge > 0]) | np.isin(lab, 1 + np.where(sizes > 3000)[0])   # фон и середина сердца
+    alpha = 1 - ndi.binary_opening(keep, iterations=1).astype(float)
+    alpha[:4], alpha[-4:], alpha[:, :4], alpha[:, -4:] = 0, 0, 0, 0     # артефакты морфологии у края кадра
+    alpha = ndi.gaussian_filter(alpha, .8)
+    return save('heart-wreath', rgb, alpha)
+
+
 ALL = {f.__name__: f for f in (flowers_top, flowers_arch, oval, frame,
-                                     heart_lace, blooms, backdrop, urns_photo, envelope)}
+                                     heart_lace, blooms, backdrop, urns_photo, envelope, heart_wreath)}
 if __name__ == '__main__':
     for n in sys.argv[1:] or ALL:
         ALL[n.replace('-', '_')]()
