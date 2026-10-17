@@ -8,7 +8,8 @@
   <meta property="og:title" content="Фёдор и Ирина – 21.07.2027">
   <meta property="og:description" content="Приглашаем вас на нашу свадьбу">
   <meta name="theme-color" content="#23270b">
-  <link rel="preload" href="assets/img/envelope.webp" as="image">
+  <link rel="preload" href="assets/img/env-body.webp" as="image">
+  <link rel="preload" href="assets/img/env-flap.webp" as="image">
   <link rel="preload" href="assets/img/env-seal.webp" as="image">
   <link rel="preload" href="assets/fonts/cormorant-cyr.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/greatvibes-cyr.woff2" as="font" type="font/woff2" crossorigin>
@@ -18,31 +19,27 @@
 <body>
 
   <!-- фон: одна штора, медленно едет при прокрутке -->
-  <div class="backdrop" aria-hidden="true"><img src="assets/img/backdrop.webp" alt="" width="941" height="1672" decoding="async"></div>
+  <div class="backdrop" aria-hidden="true"><img src="assets/img/bg-sections.webp" alt="" width="1024" height="1536" decoding="async"></div>
 
-  <!-- ============ ЛИЦО ОТКРЫТКИ: КОНВЕРТ С ЗОЛОТОЙ ПЕЧАТЬЮ ============ -->
+  <!-- ============ ЛИЦО ОТКРЫТКИ: КОНВЕРТ НА ВЕСЬ ЭКРАН ============ -->
   <div class="intro" id="intro">
-    <div class="intro__veil" aria-hidden="true"></div>
-    <div class="intro__glow" aria-hidden="true"></div>
     <div class="envelope">
-      <div class="env__flap env__flap--l" aria-hidden="true"></div>
-      <div class="env__flap env__flap--r" aria-hidden="true"></div>
-      <div class="env__flap env__flap--b" aria-hidden="true"></div>
-      <div class="env__flap env__flap--t" aria-hidden="true"></div>
-      <div class="env__whole" aria-hidden="true"></div>
-      <button class="seal" id="intro-open" type="button" aria-label="Открыть приглашение">
-        <span class="seal__ring" aria-hidden="true"></span>
-        <img class="seal__img" src="assets/img/env-seal.webp" alt="" width="329" height="329">
-        <span class="seal__shine" aria-hidden="true"></span>
-      </button>
+      <div class="env__card">
+        <img class="env__body" src="assets/img/env-body.webp" alt="" width="857" height="1528">
+        <div class="env__flap">
+          <img class="env__flap-front" src="assets/img/env-flap.webp" alt="" width="857" height="1528">
+          <div class="env__flap-back" aria-hidden="true"></div>
+          <button class="seal" id="intro-open" type="button" aria-label="Открыть приглашение">
+            <img class="seal__img" src="assets/img/env-seal.webp" alt="" width="560" height="588">
+          </button>
+        </div>
+      </div>
     </div>
-    <p class="intro__hint">Нажмите на печать, чтобы открыть</p>
   </div>
 
   <!-- ============ ОБЛОЖКА ============ -->
   <header class="hero" id="top">
     <div class="hero__stage">
-      <img class="hero__flowers" data-parallax=".12" src="assets/img/flowers-top.webp" alt="" aria-hidden="true" width="495" height="373">
       <div class="dust" aria-hidden="true"></div>
       <div class="col hero__col">
         <p class="hero__kicker" data-letters>Wedding Day</p>
@@ -72,9 +69,6 @@
     <section class="sec sec--invite" id="invite">
       <div class="col">
         <div class="arch" data-reveal="rise">
-          <img class="garland" src="assets/img/flowers-arch.webp" alt="" aria-hidden="true" width="413" height="242" loading="lazy" decoding="async">
-          <img class="bloom bloom--arch-l" data-bloom src="assets/img/bloom-lily-rose.webp" alt="" aria-hidden="true" width="305" height="424" loading="lazy" decoding="async">
-          <img class="bloom bloom--arch-r" data-bloom src="assets/img/bloom-peony.webp" alt="" aria-hidden="true" width="212" height="294" loading="lazy" decoding="async">
           <div class="arch__body">
             <h2 class="title" data-write>Дорогие<br>родные и близкие!</h2>
             <p class="text" data-reveal>
@@ -87,6 +81,7 @@
             </p>
 
             <h3 class="title title--month" data-write>Июль</h3>
+            <p class="cal__year" data-reveal>2027</p>
             <div class="cal" data-inview role="img" aria-label="Июль 2027 года, день свадьбы – среда, 21 июля">
               <span class="cal__wd">пн</span><span class="cal__wd">вт</span><span class="cal__wd">ср</span><span class="cal__wd">чт</span><span class="cal__wd">пт</span><span class="cal__wd">сб</span><span class="cal__wd">вс</span>
               <i></i><i></i><i></i>
@@ -107,10 +102,8 @@
     <section class="sec sec--place" id="place">
       <div class="col">
         <div class="oval" data-reveal="frame">
-          <img class="oval__img" src="assets/img/oval.webp" alt="" width="359" height="417" loading="lazy" decoding="async">
+          <img class="oval__img" src="assets/img/frame-place.webp" alt="" width="1024" height="1536" loading="lazy" decoding="async">
           <span class="shine shine--oval" aria-hidden="true"></span>
-          <img class="bloom bloom--oval-l" data-bloom src="assets/img/bloom-lily.webp" alt="" aria-hidden="true" width="278" height="395" loading="lazy" decoding="async">
-          <img class="bloom bloom--oval-b" data-bloom src="assets/img/bloom-roses.webp" alt="" aria-hidden="true" width="435" height="328" loading="lazy" decoding="async">
           <div class="oval__text">
             <h2 class="title" data-write>Адрес</h2>
             <p class="venue" data-reveal>«Хрустальный Сад»</p>
@@ -126,19 +119,17 @@
     <section class="sec sec--program" id="program">
       <div class="col">
         <div class="frame" data-reveal="frame">
-          <img class="frame__img" src="assets/img/frame.webp" alt="" width="449" height="698" loading="lazy" decoding="async">
+          <img class="frame__img" src="assets/img/frame-program.webp" alt="" width="1024" height="1536" loading="lazy" decoding="async">
           <span class="shine shine--frame" aria-hidden="true"></span>
-          <img class="bloom bloom--frame" data-bloom src="assets/img/bloom-posy.webp" alt="" aria-hidden="true" width="371" height="427" loading="lazy" decoding="async">
           <div class="frame__card">
             <h2 class="title" data-write>Программа</h2>
             <ol class="prog" data-inview>
-              <li><time>15:00</time><span>Сбор гостей</span></li>
-              <li><time>16:00</time><span>Церемония</span></li>
-              <li><time>17:00</time><span>Банкет</span></li>
-              <li><time>23:00</time><span>Завершение</span></li>
+              <li><time>14:00</time><span>Сбор гостей</span></li>
+              <li><time>15:00</time><span>Церемония</span></li>
+              <li><time>16:00</time><span>Банкет</span></li>
+              <li><time>23:00</time><span>Завершение вечера</span></li>
             </ol>
           </div>
-          <img class="bloom bloom--frame-b" data-bloom src="assets/img/bloom-lily-rose.webp" alt="" aria-hidden="true" width="305" height="424" loading="lazy" decoding="async">
         </div>
       </div>
     </section>
@@ -147,8 +138,6 @@
     <section class="sec sec--panel">
       <div class="col">
         <div class="panel" data-reveal="rise">
-          <img class="bloom bloom--panel-l" data-bloom src="assets/img/bloom-corner-r.webp" alt="" aria-hidden="true" width="530" height="669" loading="lazy" decoding="async">
-          <img class="bloom bloom--panel-r" data-bloom src="assets/img/bloom-corner-l.webp" alt="" aria-hidden="true" width="581" height="664" loading="lazy" decoding="async">
           <div class="panel__part" id="dress">
             <h2 class="title" data-write>Дресс-код</h2>
             <p class="text" data-reveal>
@@ -223,7 +212,7 @@
         <div><b data-unit="seconds">00</b><span data-label="seconds">секунд</span></div>
       </div>
     </div>
-    <img class="finale__flowers" data-bloom src="assets/img/urns.webp" alt="" aria-hidden="true" width="1600" height="619" loading="lazy" decoding="async">
+    <img class="finale__flowers" data-bloom src="assets/img/flowers-bottom.webp" alt="" aria-hidden="true" width="1593" height="524" loading="lazy" decoding="async">
   </footer>
 
   <!-- ============ МУЗЫКА ============ -->
