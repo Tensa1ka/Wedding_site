@@ -24,7 +24,7 @@
       el.appendChild(s);
     });
   }
-  document.querySelectorAll("[data-letters], .intro__hint").forEach(splitLetters);
+  document.querySelectorAll("[data-letters]").forEach(splitLetters);
 
   /* рукописные заголовки: содержимое – во внутренний слой, который раскрывается маской */
   document.querySelectorAll("[data-write]").forEach(function (el) {
@@ -57,9 +57,9 @@
   }
 
   /* =========================================================
-     Лицо открытки: конверт
-     Печать поднимается целиком (не ломается) и уплывает вверх,
-     клапаны раскрываются по сгибам: верхний, нижний, затем боковые.
+     Лицо открытки: конверт на весь экран (около 5 секунд)
+     Печать остаётся на клапане целой; клапан откидывается на петле у верхнего края,
+     части конверта не расходятся – затем весь конверт плавно уезжает вниз.
      ========================================================= */
   var intro = document.getElementById("intro");
   var openBtn = document.getElementById("intro-open");
@@ -86,66 +86,36 @@
       return;
     }
 
-    var ease = "cubic-bezier(.23,1,.32,1)";
-    var fold = "cubic-bezier(.65,0,.35,1)";
+    var card = intro.querySelector(".env__card");
+    var flap = intro.querySelector(".env__flap");
 
-    // печать: короткий отклик, отрыв от бумаги и плавный уход вверх – целиком
+    // 0–0,45 с: печать отзывается на нажатие
     openBtn.animate(
-      [{ transform: "translateY(0) scale(1) rotate(0deg)", opacity: 1, offset: 0 },
-       { transform: "translateY(0) scale(.95) rotate(0deg)", opacity: 1, offset: .12 },
-       { transform: "translateY(-6%) scale(1.1) rotate(-4deg)", opacity: 1, offset: .4 },
-       { transform: "translateY(-120%) scale(1.02) rotate(-12deg)", opacity: 0, offset: 1 }],
-      { duration: 1500, easing: "cubic-bezier(.5,0,.3,1)", fill: "forwards" }
+      [{ transform: "scale(1)" }, { transform: "scale(.94)", offset: .35 }, { transform: "scale(1.02)", offset: .7 }, { transform: "scale(1)" }],
+      { duration: 450, easing: "cubic-bezier(.23,1,.32,1)" }
     );
-    openBtn.querySelector(".seal__img").animate(
-      [{ filter: "drop-shadow(0 6px 8px rgba(60,40,5,.35))" },
-       { filter: "drop-shadow(0 26px 22px rgba(60,40,5,.28))" }],
-      { duration: 700, delay: 180, easing: ease, fill: "forwards" }
+    // 0,45–3 с: клапан вместе с печатью откидывается вверх на петле
+    flap.animate(
+      [{ transform: "rotateX(0deg)" }, { transform: "rotateX(-12deg)", offset: .14 }, { transform: "rotateX(-180deg)" }],
+      { duration: 2550, delay: 450, easing: "cubic-bezier(.42,0,.22,1)", fill: "forwards" }
     );
-    openBtn.querySelector(".seal__ring").animate(
-      [{ opacity: 0, transform: "scale(.9)" }, { opacity: 1, offset: .25 }, { opacity: 0, transform: "scale(1.9)" }],
-      { duration: 1100, delay: 120, easing: ease, fill: "forwards" }
+    // тень под клапаном ослабевает, по мере того как он поднимается
+    card.animate(
+      [{ filter: "brightness(1)" }, { filter: "brightness(1.04)" }],
+      { duration: 2400, delay: 600, easing: "ease-in-out", fill: "forwards" }
     );
-    intro.querySelector(".intro__glow").animate(
-      [{ opacity: 0 }, { opacity: 1, offset: .4 }, { opacity: 0 }],
-      { duration: 2400, delay: 500, easing: "ease-in-out", fill: "forwards" }
-    );
-
-    // клапаны раскрываются по сгибам (обратная сторона скрыта – за ними уже видна обложка)
-    var START = 620;
-    var flaps = [
-      ["t", "rotateX(0deg)", "rotateX(-178deg)", 0],
-      ["b", "rotateX(0deg)", "rotateX(178deg)", 170],
-      ["l", "rotateY(0deg)", "rotateY(178deg)", 330],
-      ["r", "rotateY(0deg)", "rotateY(-178deg)", 380]
-    ];
-    flaps.forEach(function (f) {
-      intro.querySelector(".env__flap--" + f[0]).animate(
-        [{ transform: f[1] }, { transform: f[2] }],
-        { duration: 1500, delay: START + f[3], easing: fold, fill: "forwards" }
-      );
-    });
-
-    // конверт чуть приближается, дымка над страницей рассеивается
+    // 3–5 с: конверт целиком уезжает вниз, открывая обложку
     envelope.animate(
-      [{ transform: "scale(1)" }, { transform: "scale(1.12)" }],
-      { duration: 2300, delay: START, easing: ease, fill: "forwards" }
-    );
-    envelope.animate(
-      [{ filter: "drop-shadow(0 26px 34px rgba(70,58,30,.32))" }, { filter: "drop-shadow(0 26px 34px rgba(70,58,30,0))" }],
-      { duration: 900, delay: START + 300, easing: "ease-out", fill: "forwards" }
-    );
-    intro.querySelector(".intro__veil").animate(
-      [{ opacity: 1 }, { opacity: 0 }],
-      { duration: 1500, delay: START + 250, easing: "ease-in-out", fill: "forwards" }
+      [{ transform: "translateY(0)" }, { transform: "translateY(108%)" }],
+      { duration: 1900, delay: 3100, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" }
     );
     intro.animate(
-      [{ backgroundColor: "rgba(233,226,211,1)" }, { backgroundColor: "rgba(233,226,211,0)" }],
-      { duration: 1100, delay: START + 150, easing: "ease-out", fill: "forwards" }
+      [{ backgroundColor: "rgba(239,228,211,1)" }, { backgroundColor: "rgba(239,228,211,0)" }],
+      { duration: 1500, delay: 3200, easing: "ease-out", fill: "forwards" }
     );
 
-    setTimeout(reveal, START + 450);
-    setTimeout(function () { intro.remove(); }, START + 2500);
+    setTimeout(reveal, 3350);
+    setTimeout(function () { intro.remove(); }, 5100);
   }
 
   if (intro && openBtn) {
