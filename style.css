@@ -348,6 +348,19 @@ main { overflow-x: hidden; overflow-x: clip; }
 .arch .title:first-child { font-size: 11.6cqi; }
 .arch .cal { width: 100%; font-size: 6.6cqi; }      /* календарь – по ширине поля рамы */
 .arch .cal__wd { font-size: 5cqi; }
+/* год под месяцем – с тонкими линиями по сторонам, как на макете */
+.cal__year {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .8em;
+  margin: .1em 0 0;
+  font-size: 5.4cqi;
+  letter-spacing: .18em;
+  color: var(--olive-ink);
+}
+.cal__year::before, .cal__year::after { content: ""; width: 3.2em; height: 1px; background: currentColor; opacity: .55; }
+.cal__year + .cal { margin-top: 3cqi; }
 
 /* ---------- Календарь ---------- */
 .cal {
@@ -419,7 +432,7 @@ main { overflow-x: hidden; overflow-x: clip; }
 .frame__img { width: 100%; }
 .frame__card {
   position: absolute;
-  inset: 25% 18% 13% 24%;   /* поле рамы; слева сверху и справа снизу – лилии */
+  inset: 25% 25% 13% 20%;   /* поле рамы; слева сверху и справа снизу – лилии: текст чуть левее центра */
   display: flex;
   flex-direction: column;
   align-items: center;
