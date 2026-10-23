@@ -229,9 +229,10 @@ h1, h2, h3, p { margin: 0; }
 .intro.is-ready .seal { opacity: 1; transition: opacity .7s ease .5s, transform .16s var(--ease-out); }
 
 /* =========================================================
-   Обложка: присланное фото (сердце с фоном) целиком, без изменений.
-   Слои лежат в одной ячейке сетки; если пропорции экрана другие, по краям –
-   то же фото, размытое, поэтому сердце никогда не обрезается.
+   Обложка: присланное фото (сердце с фоном).
+   Альбомные экраны (1920 × 1080 и любые от 7:10) – та же сцена, продолженная вправо и влево,
+   на весь экран. Узкие – фото целиком, по краям то же фото, размытое: сердце не обрезается.
+   Слои лежат в одной ячейке сетки.
    ========================================================= */
 .hero {
   position: relative;
@@ -247,23 +248,26 @@ h1, h2, h3, p { margin: 0; }
   -webkit-mask-image: linear-gradient(#000 94%, transparent);
   mask-image: linear-gradient(#000 94%, transparent);
 }
-.hero > * { grid-area: 1 / 1; }
-.hero__fill {
-  inline-size: 100%;
-  block-size: 100%;
-  max-inline-size: none;
-  object-fit: cover;
-  filter: blur(28px);
-  scale: 1.15;
+.hero > *, .hero__pic > * { grid-area: 1 / 1; }
+.hero__pic { display: contents; }
+.hero__fill { inline-size: 100%; block-size: 100%; filter: blur(28px); scale: 1.15; }
+.hero__photo { inline-size: min(100%, 100vh * 1124 / 1999); }
+@supports (height: 100svh) { .hero__photo { inline-size: min(100%, 100svh * 1124 / 1999); } }
+/* размытое фото по краям грузится только на узких экранах */
+@media (max-aspect-ratio: 7 / 10) {
+  .hero__fill { background: url(assets/img/hero.jpg) 50% 50% / cover; }
 }
-.hero__photo { inline-size: min(100%, 100vh * 363 / 637); }
-@supports (height: 100svh) { .hero__photo { inline-size: min(100%, 100svh * 363 / 637); } }
 /* стык фото с размытыми полями – мягкий */
-@media (min-aspect-ratio: 363 / 637) {
+@media (min-aspect-ratio: 1124 / 1999) {
   .hero__photo { -webkit-mask-image: linear-gradient(90deg, transparent, #000 2.5%, #000 97.5%, transparent); mask-image: linear-gradient(90deg, transparent, #000 2.5%, #000 97.5%, transparent); }
 }
-@media (max-aspect-ratio: 363 / 637) {
+@media (max-aspect-ratio: 1124 / 1999) {
   .hero__photo { -webkit-mask-image: linear-gradient(transparent, #000 2%, #000 98%, transparent); mask-image: linear-gradient(transparent, #000 2%, #000 98%, transparent); }
+}
+/* широкие экраны: сцена 1920 × 1080 на весь экран, сердце по центру */
+@media (min-aspect-ratio: 7 / 10) {
+  .hero__fill { display: none; }
+  .hero__photo { inline-size: 100%; block-size: 100%; max-inline-size: none; object-fit: cover; -webkit-mask-image: none; mask-image: none; }
 }
 
 /* после открытия конверта фото проявляется */
@@ -287,107 +291,162 @@ main {
 .sec--invite { padding-block-start: clamp(30px, 6vw, 80px); }
 .sec--place { padding-block-end: clamp(48px, 9vw, 120px); }
 
-/* ---------- Карточки из присланных картинок: вставлены как есть ---------- */
-.card { position: relative; inline-size: 96cqi; margin-inline: auto; }
-.card__img { inline-size: 100%; }
+/* ---------- Карточки и рамки из присланных картинок ---------- */
+.card, .oval, .frame { position: relative; inline-size: 96cqi; margin-inline: auto; }
+.oval, .frame { container-type: inline-size; }
+.card__img, .oval__img, .frame__img { inline-size: 100%; filter: drop-shadow(0 22px 30px rgba(60, 62, 40, .16)); }
 
-/* ---------- Адрес ---------- */
-.oval { position: relative; inline-size: 96cqi; margin-inline: auto; container-type: inline-size; }
-.oval__img { inline-size: 100%; filter: drop-shadow(0 22px 30px rgba(60, 62, 40, .14)); }
+/* Широкие экраны (1920 × 1080, ноутбуки): секция – ровно экран, карточка целиком в нём, по центру.
+   Карточки с нарисованным текстом не уже 500 px, чтобы текст на них читался и на низких экранах. */
+@media (min-aspect-ratio: 1 / 1) and (min-height: 600px) {
+  .sec, .sec--invite, .sec--place {
+    min-block-size: 100vh;
+    min-block-size: 100svh;
+    align-content: center;
+    padding-block: 3.5vh;
+    padding-block: 3.5svh;
+  }
+  .card--invite { inline-size: min(96cqi, max(500px, 93svh * 915 / 1641)); }
+  .card--dress { inline-size: min(96cqi, max(500px, 93svh * 927 / 1572)); }
+  .oval, .frame { inline-size: min(96cqi, max(420px, 93svh * 1024 / 1536)); }
+}
+
+/* ---------- Адрес: текст и орнаменты – как на присланном макете ---------- */
 .oval__text {
   position: absolute;
-  inset: 21% 21% 22%;   /* поле рамки: x 18–82 %, y 20–78 % */
+  inset: 24% 17% 22%;   /* поле рамки: x 18–82 %, y 20–78 % */
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  color: #4d4a2b;
 }
-.oval .title { font-size: 13cqi; }
-.venue { margin-top: .4em; font-weight: 600; font-size: 4.8cqi; letter-spacing: .03em; text-transform: uppercase; color: var(--ink); }
-.oval .text { margin-top: .45em; font-size: 4.8cqi; }
-.oval .text--note { margin-top: .55em; font-size: 4.3cqi; max-width: 13em; }
+.oval .title { font-size: 17.5cqi; line-height: 1; color: #555a2c; }
+.rule {
+  display: block;
+  inline-size: 48.9cqi;
+  aspect-ratio: 501 / 57;
+  margin-top: 1.25cqi;
+  background: url(assets/img/orn-rule.webp) 50% 50% / 100% 100% no-repeat;
+}
+.rule--short { inline-size: 24.5cqi; aspect-ratio: 251 / 57; margin-top: 1.8cqi; background-image: url(assets/img/orn-rule-short.webp); }
+.venue { margin-top: -.5cqi; font-weight: 500; font-size: 4.7cqi; letter-spacing: .03em; text-transform: uppercase; }
+.oval .text { max-width: none; margin-top: .85cqi; font-size: 4.45cqi; text-wrap: nowrap; }
+.oval .text--note { margin-top: -1.3cqi; max-width: 12em; font-size: 4.15cqi; line-height: 1.24; color: inherit; text-wrap: balance; }
 .link {
+  position: relative;
   display: inline-block;
-  margin-top: .9em;
-  padding: .2em .1em;
-  font-size: 4.5cqi;
-  font-weight: 600;
-  color: var(--olive);
+  margin-top: 3.75cqi;
+  padding: 0 .1em .2em;
+  font-size: 4.65cqi;
+  font-weight: 500;
+  color: inherit;
   text-decoration: none;
-  background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat;
+  background: linear-gradient(#a98c58, #a98c58) 0 100% / 100% .45cqi no-repeat;
   transition: background-size .35s var(--ease-out), transform .16s var(--ease-out);
+}
+.link::after {   /* подвеска с макета под линией */
+  content: "";
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: 50%;
+  inline-size: 7.6cqi;
+  aspect-ratio: 78 / 34;
+  translate: -50% 0;
+  background: url(assets/img/orn-pendant.webp) 50% 0 / 100% 100% no-repeat;
 }
 .link:active { transform: scale(.97); }
 @media (hover: hover) and (pointer: fine) {
-  .link:hover { background-size: 0 1px; background-position: 100% 100%; }
+  .link:hover { background-size: 0 .45cqi; background-position: 100% 100%; }
 }
 
-/* ---------- Программа ---------- */
-.frame { position: relative; inline-size: 96cqi; margin-inline: auto; container-type: inline-size; }
-.frame__img { inline-size: 100%; }
+/* ---------- Программа: как на присланном макете ---------- */
 .frame__card {
   position: absolute;
-  inset: 25% 25% 13% 20%;   /* поле рамы; слева сверху и справа снизу – лилии: текст чуть левее центра */
+  inset: 27.4% 22% 15.6% 24.4%;   /* поле рамы; слева сверху и справа снизу – лилии: текст чуть правее центра */
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  color: #4d4a2b;
 }
-.frame .title { font-size: 12cqi; }
-.prog { margin: 2.4cqi 0 0; padding: 0; list-style: none; }
+.frame .title { margin-top: 2.4cqi; font-size: 12cqi; color: #555a2c; translate: 2cqi 0; }
+.prog { margin: 5.6cqi 0 0; padding: 0; list-style: none; }
 .prog li { display: flex; flex-direction: column; align-items: center; }
-.prog li + li::before {
+.prog li + li::before {   /* стрелка со звёздочкой с макета */
   content: "";
   display: block;
-  width: 1.5px;
-  height: 2.6cqi;
-  margin: 1.2cqi 0 1.3cqi;
-  background: var(--ink);
+  inline-size: 2.7cqi;
+  aspect-ratio: 28 / 61;
+  margin: .3cqi 0 .25cqi;
+  background: url(assets/img/orn-star.webp) 50% 0 / 100% 100% no-repeat;
   transform-origin: top;
 }
-.prog time { font-family: var(--script); font-size: 7.8cqi; line-height: 1.05; color: var(--olive-ink); }
-.prog span { font-size: 4.5cqi; line-height: 1.2; color: var(--ink); }
+.prog time { font-style: italic; font-weight: 500; font-size: 7.6cqi; line-height: .85; letter-spacing: .01em; color: #4f4b28; }
+.prog span { font-size: 3.95cqi; line-height: 1.2; }
 
 
 /* ---------- Анкета поверх картинки ----------
-   Кружки и кнопка «Отправить» нарисованы на картинке; над ними – настоящие элементы формы.
-   Координаты – в пикселях картинки 778 × 2000 (--u – один её пиксель). */
+   Поле имени, кружки и кнопка «Отправить» нарисованы на картинке; над ними – настоящие элементы формы.
+   Координаты – в пикселях картинки 927 × 1572 (--u – один её пиксель). */
 .rsvp {
   position: absolute;
   inset: 0;
   container-type: size;
   pointer-events: none;
-  --u: calc(100cqw / 778);
+  --u: calc(100cqw / 927);
 }
+.rsvp__name {
+  position: absolute;
+  inset-inline-start: calc(242 * var(--u));
+  inset-block-start: calc(1258 * var(--u));
+  inline-size: calc(586 * var(--u));
+  block-size: calc(42 * var(--u));
+  pointer-events: auto;
+}
+.rsvp__name input {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  padding: 0 calc(22 * var(--u));
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: max(16px, calc(26 * var(--u)));   /* не меньше 16 px: телефон не увеличивает страницу при вводе */
+  color: #3f3c22;
+  outline: none;
+  transition: box-shadow .2s ease;
+}
+.rsvp__name input:focus-visible { box-shadow: 0 0 0 2px rgba(86, 96, 42, .55); }
 .rsvp__choice { margin: 0; padding: 0; border: 0; min-inline-size: 0; }
 .hit {
   position: absolute;
-  inset-inline-start: calc(236 * var(--u));
-  inline-size: calc(324 * var(--u));
-  block-size: calc(50 * var(--u));
+  inset-inline-start: calc(243 * var(--u));
+  inline-size: calc(340 * var(--u));
+  block-size: calc(44 * var(--u));
   pointer-events: auto;
   cursor: pointer;
   border-radius: calc(12 * var(--u));
   -webkit-tap-highlight-color: transparent;
 }
-.hit--yes { inset-block-start: calc(1636 * var(--u)); }
-.hit--no { inset-block-start: calc(1688 * var(--u)); }
+.hit--yes { inset-block-start: calc(1374 * var(--u)); }
+.hit--no { inset-block-start: calc(1418 * var(--u)); }
 /* сама радиокнопка – прозрачная, точно над нарисованным кружком (подсказка браузера укажет на него) */
 .hit input {
   position: absolute;
-  inset-inline-start: calc(9 * var(--u));
+  inset-inline-start: calc(6 * var(--u));
   inset-block-start: 50%;
-  inline-size: calc(40 * var(--u));
-  block-size: calc(40 * var(--u));
+  inline-size: calc(38 * var(--u));
+  block-size: calc(38 * var(--u));
   margin: 0;
   translate: 0 -50%;
   opacity: 0;
   cursor: pointer;
 }
-/* выбранный вариант: точка внутри нарисованного кружка (центр – 265 px по горизонтали) */
+/* выбранный вариант: точка внутри нарисованного кружка (центр – 268 px по горизонтали) */
 .hit i {
   position: absolute;
-  inset-inline-start: calc(29 * var(--u));
+  inset-inline-start: calc(25 * var(--u));
   inset-block-start: 50%;
   inline-size: calc(20 * var(--u));
   aspect-ratio: 1;
@@ -402,10 +461,10 @@ main {
 .hit input:checked + i { opacity: 1; scale: 1; }
 .hit:has(input:focus-visible) { outline: 2px solid var(--olive); outline-offset: 2px; }
 .hit--send {
-  inset-inline-start: calc(240 * var(--u));
-  inset-block-start: calc(1751 * var(--u));
-  inline-size: calc(305 * var(--u));
-  block-size: calc(70 * var(--u));
+  inset-inline-start: calc(365 * var(--u));
+  inset-block-start: calc(1470 * var(--u));
+  inline-size: calc(340 * var(--u));
+  block-size: calc(66 * var(--u));
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -415,7 +474,8 @@ main {
 .hit--send:focus-visible { outline: 2px solid var(--olive); outline-offset: 3px; }
 .hit--send:active { background: rgba(20, 24, 4, .16); }
 @media (hover: hover) and (pointer: fine) { .hit--send:hover { background: rgba(20, 24, 4, .1); } }
-.rsvp.is-sent .hit { pointer-events: none; }
+.hit--send.is-busy { background: rgba(20, 24, 4, .16); cursor: progress; }
+.rsvp.is-sent .hit, .rsvp.is-sent .rsvp__name { pointer-events: none; }
 
 /* ---------- Окно анкеты: имя и «Спасибо!» ---------- */
 .ask {
@@ -456,32 +516,6 @@ main {
 .ask__close:focus-visible { outline: 2px solid var(--olive); }
 @media (hover: hover) and (pointer: fine) { .ask__close:hover { background: rgba(86, 96, 42, .1); } }
 
-.field { position: relative; display: block; text-align: start; }
-.field::after {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 0;
-  block-size: 1px;
-  background: var(--olive-ink);
-  transition: block-size .2s ease;
-}
-.field:focus-within::after { block-size: 2px; }
-.field__label { display: block; font-size: clamp(17px, 5cqi, 21px); line-height: 1.3; color: var(--olive-ink); }
-.field__input {
-  display: block;
-  inline-size: 100%;
-  margin-block-start: 6px;
-  padding-block: 8px;
-  padding-inline: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  font-size: clamp(18px, 5.2cqi, 22px);
-  color: var(--ink);
-  outline: none;
-}
-.rsvp__error { font-size: clamp(15px, 4.3cqi, 18px); color: #8e3b2f; }
 .btn {
   display: flex;
   align-items: center;
@@ -504,11 +538,9 @@ main {
 .btn:active { transform: scale(.97); }
 .btn:focus-visible { outline: 2px solid var(--olive); outline-offset: 3px; }
 @media (hover: hover) and (pointer: fine) { .btn:hover { background: #4d5330; } }
-.btn.is-busy { opacity: .7; pointer-events: none; }
-.btn.is-busy span::after { content: "…"; }
-.rsvp-done { align-items: center; outline: none; }
+.rsvp-done, .rsvp-fail { align-items: center; outline: none; }
 .rsvp-done__heart { inline-size: min(46cqi, 180px); }
-.rsvp-done .text { margin: 0; }
+.rsvp-done .text, .rsvp-fail .text { margin: 0; }
 .rsvp-done:not([hidden]) .rsvp-done__heart { animation: wreath-in 1.6s var(--ease-settle) .1s both; }
 @keyframes wreath-in { from { opacity: 0; scale: .7; rotate: -6deg; } 60% { opacity: 1; } to { opacity: 1; scale: 1; rotate: 0deg; } }
 
