@@ -12,7 +12,8 @@
   <link rel="preload" href="assets/img/env-flap.webp" as="image">
   <link rel="preload" href="assets/img/env-seal.webp" as="image">
   <link rel="preload" href="assets/img/env-inside.webp" as="image">
-  <link rel="preload" href="assets/img/hero.jpg" as="image">
+  <link rel="preload" href="assets/img/hero.jpg" as="image" media="(max-aspect-ratio: 7/10)">
+  <link rel="preload" as="image" imagesrcset="assets/img/hero-wide.jpg 1920w, assets/img/hero-wide-2880.jpg 2880w" imagesizes="100vw" media="(min-aspect-ratio: 7/10)">
   <link rel="preload" href="assets/fonts/cormorant-cyr.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/greatvibes-cyr.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
@@ -53,20 +54,24 @@
     </div>
   </div>
 
-  <!-- ============ ОБЛОЖКА: присланное фото сердца с фоном, как есть ============ -->
+  <!-- ============ ОБЛОЖКА: присланное фото сердца с фоном ============ -->
+  <!-- широкие экраны (1920 × 1080 и любые альбомные) – та же сцена, продолженная вправо и влево;
+       узкие – присланное фото целиком, по краям то же фото размытое -->
   <header class="hero" id="top">
-    <!-- то же фото, размытое, заполняет экран по краям, если пропорции экрана другие -->
-    <img class="hero__fill" src="assets/img/hero.jpg" alt="" aria-hidden="true" width="363" height="637" decoding="async">
-    <img class="hero__photo" src="assets/img/hero.jpg" alt="" width="363" height="637" decoding="async">
+    <div class="hero__fill" aria-hidden="true"></div>
+    <picture class="hero__pic">
+      <source media="(min-aspect-ratio: 7/10)" srcset="assets/img/hero-wide.jpg 1920w, assets/img/hero-wide-2880.jpg 2880w" sizes="100vw" width="1920" height="1080">
+      <img class="hero__photo" src="assets/img/hero.jpg" alt="" width="1124" height="1999" decoding="async">
+    </picture>
     <h1 class="sr-only">Фёдор и Ирина – 21.07.2027</h1>
   </header>
 
   <main>
-    <!-- ============ ПРИГЛАШЕНИЕ И КАЛЕНДАРЬ: присланная рамка, как есть ============ -->
+    <!-- ============ ПРИГЛАШЕНИЕ И КАЛЕНДАРЬ: присланная карточка без шахматки ============ -->
     <section class="sec sec--invite" id="invite">
       <div class="col">
-        <div class="card" data-reveal="rise">
-          <img class="card__img" src="assets/img/card-invite.webp" alt="" width="667" height="2000" loading="lazy" decoding="async">
+        <div class="card card--invite" data-reveal="rise">
+          <img class="card__img" src="assets/img/card-invite.webp" alt="" width="915" height="1641" loading="lazy" decoding="async">
           <div class="sr-only">
             <h2>Дорогие родные и близкие!</h2>
             <p>Мы будем счастливы разделить с вами день, наполненный любовью, теплом и радостными моментами.</p>
@@ -84,8 +89,10 @@
           <img class="oval__img" src="assets/img/frame-place.webp" alt="" width="1024" height="1536" loading="lazy" decoding="async">
           <div class="oval__text">
             <h2 class="title" data-write>Адрес</h2>
+            <i class="rule" data-reveal aria-hidden="true"></i>
             <p class="venue" data-reveal>«Хрустальный Сад»</p>
             <p class="text" data-reveal>г. Москва, ул. Жужа, 37</p>
+            <i class="rule rule--short" data-reveal aria-hidden="true"></i>
             <p class="text text--note" data-reveal>Территория парка «Коломенское», недалеко от набережной Москвы-реки</p>
             <a class="link" data-reveal href="https://yandex.ru/maps/?text=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C%20%D1%83%D0%BB%D0%B8%D1%86%D0%B0%20%D0%96%D1%83%D0%B6%D0%B0%2C%2037" target="_blank" rel="noopener">Открыть на карте</a>
           </div>
@@ -111,12 +118,12 @@
       </div>
     </section>
 
-    <!-- ============ ДРЕСС-КОД · ФОТО · АНКЕТА: присланная рамка, как есть ============ -->
-    <!-- кружки и кнопка нарисованы на картинке: поверх них лежат настоящие, невидимые элементы формы -->
+    <!-- ============ ДРЕСС-КОД · ФОТО · АНКЕТА: присланная карточка, как есть ============ -->
+    <!-- поле имени, кружки и кнопка нарисованы на картинке: поверх них лежат настоящие элементы формы -->
     <section class="sec sec--panel" id="dress">
       <div class="col">
         <div class="card card--dress" data-reveal="rise">
-          <img class="card__img" src="assets/img/card-dress.webp" alt="" width="778" height="2000" loading="lazy" decoding="async">
+          <img class="card__img" src="assets/img/card-dress.webp" alt="" width="927" height="1572" loading="lazy" decoding="async">
           <div class="sr-only">
             <h2>Дресс-код</h2>
             <p>Мы не хотим ограничивать вас в выборе нарядов, ведь самое главное для нас – ваше присутствие и хорошее настроение!</p>
@@ -125,10 +132,15 @@
             <h2 id="photo">Фото</h2>
             <p>После праздника, когда фото будут готовы, здесь появится ссылка на свадебный альбом!</p>
             <h2 id="rsvp">Анкета</h2>
+            <p>Пожалуйста, подтвердите присутствие до 1 июня 2027 года, чтобы мы смогли спланировать всё наилучшим образом!</p>
           </div>
           <form class="rsvp" id="rsvp-form"
                 action="https://docs.google.com/forms/d/e/1FAIpQLSe4BrtPvw5_LbyWcVfD28BD3UFVkCT_nhqsxXx3hOm8lzBYHQ/formResponse"
                 method="post" target="_blank" novalidate>
+            <label class="rsvp__name">
+              <span class="sr-only">Имя и фамилия</span>
+              <input type="text" name="entry.225506798" autocomplete="name" required>
+            </label>
             <fieldset class="rsvp__choice">
               <legend class="sr-only">Сможете ли вы присутствовать на нашем празднике?</legend>
               <label class="hit hit--yes"><input type="radio" name="entry.87327526" value="С радостью буду!" required><i></i><span class="sr-only">С радостью буду!</span></label>
@@ -141,24 +153,20 @@
     </section>
   </main>
 
-  <!-- ============ АНКЕТА: имя и ответ – в окне поверх страницы ============ -->
-  <dialog class="ask" id="rsvp-ask" aria-labelledby="rsvp-ask-title">
+  <!-- ============ АНКЕТА: «Спасибо!» или ошибка – в окне поверх страницы ============ -->
+  <dialog class="ask" id="rsvp-ask" aria-labelledby="rsvp-done-title">
     <button class="ask__close" type="button" data-close aria-label="Закрыть">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
-    <div class="ask__step" id="rsvp-step">
-      <p class="title ask__title" id="rsvp-ask-title">Как вас зовут?</p>
-      <label class="field">
-        <span class="field__label">Имя и фамилия</span>
-        <input class="field__input" type="text" name="entry.225506798" form="rsvp-form" autocomplete="name" required>
-      </label>
-      <p class="rsvp__error" id="rsvp-error" role="alert" hidden></p>
-      <button class="btn" type="submit" form="rsvp-form"><span>Отправить</span></button>
-    </div>
-    <div class="ask__step rsvp-done" id="rsvp-done" tabindex="-1" hidden>
+    <div class="ask__step rsvp-done" id="rsvp-done" tabindex="-1">
       <img class="rsvp-done__heart" src="assets/img/heart-wreath.webp" alt="" aria-hidden="true" width="531" height="478" loading="lazy" decoding="async">
-      <p class="title ask__title">Спасибо!</p>
+      <p class="title ask__title" id="rsvp-done-title">Спасибо!</p>
       <p class="text">Ваш ответ получен. До встречи на празднике!</p>
+      <button class="btn" type="button" data-close><span>Закрыть</span></button>
+    </div>
+    <div class="ask__step rsvp-fail" id="rsvp-fail" tabindex="-1" hidden>
+      <p class="title ask__title" id="rsvp-fail-title">Не отправилось</p>
+      <p class="text">Проверьте интернет и попробуйте ещё раз.</p>
       <button class="btn" type="button" data-close><span>Закрыть</span></button>
     </div>
   </dialog>

@@ -217,31 +217,27 @@
   }
 
   /* ---------- Анкета → Google Форма ----------
-     Ответ выбирается прямо на картинке (кружки и кнопка нарисованы, поверх – настоящие элементы),
-     имя спрашиваем в окне, затем отправляем оба поля */
+     Поле имени, кружки и кнопка нарисованы на картинке, поверх – настоящие элементы формы.
+     После отправки в окне – «Спасибо!» (или просьба попробовать ещё раз) */
   var form = document.getElementById("rsvp-form");
   var ask = document.getElementById("rsvp-ask");
-  var step = document.getElementById("rsvp-step");
   var done = document.getElementById("rsvp-done");
-  var errBox = document.getElementById("rsvp-error");
+  var fail = document.getElementById("rsvp-fail");
   var ANSWER = "entry.87327526", NAME = "entry.225506798";
 
-  function isOpen() { return ask.hasAttribute("open"); }
-  function openAsk() { if (typeof ask.showModal === "function") ask.showModal(); else ask.setAttribute("open", ""); }
-  function closeAsk() { if (typeof ask.close === "function") ask.close(); else ask.removeAttribute("open"); }
-  function showError(msg) {
-    errBox.textContent = msg;
-    errBox.hidden = false;
-    if (canAnimate && !reduceMotion) {
-      errBox.animate([{ transform: "translateX(-6px)" }, { transform: "translateX(5px)" }, { transform: "translateX(-3px)" }, { transform: "none" }],
-        { duration: 320, easing: "ease-out" });
-    }
+  function openAsk(step) {
+    done.hidden = step !== done;
+    fail.hidden = step !== fail;
+    ask.setAttribute("aria-labelledby", step === done ? "rsvp-done-title" : "rsvp-fail-title");
+    if (typeof ask.showModal === "function") ask.showModal(); else ask.setAttribute("open", "");
+    step.focus({ preventScroll: true });
   }
+  function closeAsk() { if (typeof ask.close === "function") ask.close(); else ask.removeAttribute("open"); }
 
   if (form && ask) {
     var radios = form.querySelectorAll('input[name="' + ANSWER + '"]');
-    var nameInput = ask.querySelector('[name="' + NAME + '"]');
-    var sendBtn = ask.querySelector("#rsvp-step .btn");
+    var nameInput = form.querySelector('[name="' + NAME + '"]');
+    var sendBtn = form.querySelector(".hit--send");
     radios.forEach(function (r) { r.addEventListener("change", function () { radios[0].setCustomValidity(""); }); });
     nameInput.addEventListener("input", function () { nameInput.setCustomValidity(""); });
     ask.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", closeAsk); });
@@ -255,26 +251,19 @@
     form.addEventListener("submit", function (ev) {
       if (!window.fetch) return;   // старый браузер: обычная отправка формы в новой вкладке
       ev.preventDefault();
-      var answer = form.querySelector('input[name="' + ANSWER + '"]:checked');
-      if (!answer) {
-        radios[0].setCustomValidity("Пожалуйста, выберите вариант ответа.");
-        radios[0].reportValidity();
-        return;
-      }
-      if (!isOpen()) {
-        errBox.hidden = true;
-        openAsk();
-        nameInput.focus();
-        return;
-      }
       var name = nameInput.value.trim();
       if (!name) {
         nameInput.setCustomValidity("Пожалуйста, напишите имя и фамилию.");
         nameInput.reportValidity();
         return;
       }
+      var answer = form.querySelector('input[name="' + ANSWER + '"]:checked');
+      if (!answer) {
+        radios[0].setCustomValidity("Пожалуйста, выберите вариант ответа.");
+        radios[0].reportValidity();
+        return;
+      }
 
-      errBox.hidden = true;
       sendBtn.classList.add("is-busy");
       var data = new URLSearchParams();
       data.append(NAME, name);
@@ -285,16 +274,13 @@
       fetch(form.action, { method: "POST", mode: "no-cors", body: data })
         .then(function () {
           form.classList.add("is-sent");
+          nameInput.readOnly = true;
           radios.forEach(function (r) { r.disabled = true; });
-          form.querySelector(".hit--send").disabled = true;
-          step.hidden = true;
-          done.hidden = false;
-          done.focus({ preventScroll: true });
+          sendBtn.disabled = true;
+          openAsk(done);
         })
-        .catch(function () {
-          sendBtn.classList.remove("is-busy");
-          showError("Не получилось отправить. Проверьте интернет и попробуйте ещё раз.");
-        });
+        .catch(function () { openAsk(fail); })
+        .then(function () { sendBtn.classList.remove("is-busy"); });
     });
   }
 
