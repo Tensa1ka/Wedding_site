@@ -1,7 +1,8 @@
 """Вырезает элементы оформления из присланных листов (tools/src) в assets/img.
 Фон листов – нарисованная «шахматка» вместо прозрачности: светлые нейтральные клетки,
-связанные с краем кадра, становятся прозрачными. Текст-заглушки на сердце и карточке
-программы закрашиваются по окружающему фону.
+связанные с краем кадра, становятся прозрачными. Текст-образец в полях рамок «Адрес» и «Программа»
+закрашивается по окружающему фону. Обложка (assets/img/hero.jpg) и карточки «Дорогие родные и близкие»
+и «Дресс-код · Фото · Анкета» (card-*.webp) вставлены как прислали – этот скрипт их не трогает.
 Запуск: python3 tools/cut.py [имя ...]"""
 import os
 import sys
@@ -134,62 +135,6 @@ def shrink(rgb, alpha, max_w):
     return a[..., :3], a[..., 3] / 255
 
 
-def heart_lace():
-    """Сердце с кружевом: имена и дата на картинке закрашиваются гладким кремовым тоном –
-    сайт пишет их сам, с анимацией."""
-    a = load_rgba('heart-lace.png')
-    rgb, alpha = a[..., :3].copy(), a[..., 3] / 255
-    H, W = alpha.shape
-    yy, xx = np.mgrid[:H, :W]
-    R, G, B = rgb[..., 0], rgb[..., 1], rgb[..., 2]
-    lum = rgb.mean(2)
-    box = (yy > H * .18) & (yy < H * .78) & (xx > W * .18) & (xx < W * .82)
-    # буквы оливковые (зелёный не слабее красного); золотой кант и жемчуг – тёплые, их не трогаем
-    ink = box & (lum < 228) & (G - R > -10) & (G - B > 8)
-    ink = ndi.binary_dilation(ink, iterations=5) & box
-    # гладкая поверхность поля: квадратичная подгонка по чистым кремовым пикселям
-    cream = box & ~ndi.binary_dilation(ink, iterations=4) & (np.linalg.norm(rgb - np.array([244, 239, 228]), axis=2) < 14)
-    X, Y = xx / W, yy / H
-    def terms(x, y):
-        return np.stack([np.ones_like(x), x, y, x * x, y * y, x * y], -1)
-    fill = np.zeros_like(rgb)
-    T = terms(X, Y)
-    for c in range(3):
-        coef, *_ = np.linalg.lstsq(T[cream], rgb[..., c][cream], rcond=None)
-        fill[..., c] = T @ coef
-    rng = np.random.default_rng(3)
-    fill += ndi.gaussian_filter(rng.normal(0, 1.3, (H, W)), .7)[..., None]
-    soft = np.clip(ndi.gaussian_filter(ink.astype(float), 2.5) * 1.6, 0, 1)[..., None]
-    rgb = rgb * (1 - soft) + fill * soft
-    rgb, alpha = shrink(rgb, alpha, 1000)
-    return save('heart', rgb, alpha)
-
-
-# букеты из листов: (лист, рамка x0, y0, x1, y1, имя)
-BLOOMS = [
-    ('flowers-a.png', (23, 729, 518, 1069), 'bloom-spray'),
-    ('flowers-b.png', (13, 650, 674, 1071), 'bloom-wide'),
-]
-
-
-def blooms():
-    cache = {}
-    for sheet, (x0, y0, x1, y1), name in BLOOMS:
-        if sheet not in cache:
-            a = load_rgba(sheet)
-            m = ndi.binary_closing(a[..., 3] > 20, iterations=4)
-            cache[sheet] = (a, ndi.label(m)[0])
-        a, lab = cache[sheet]
-        box = lab[y0:y1, x0:x1]
-        ids, cnt = np.unique(box[box > 0], return_counts=True)
-        own = box == ids[np.argmax(cnt)]                         # только свой букет, без соседей
-        own = ndi.binary_dilation(own, iterations=2)
-        rgb = a[y0:y1, x0:x1, :3]
-        alpha = a[y0:y1, x0:x1, 3] / 255 * own
-        rgb, alpha = shrink(rgb, alpha, 720)
-        save(name, rgb, alpha)
-
-
 def heart_wreath():
     """Сердце из цветов для «Спасибо» после анкеты: светлый ровный фон и середина – прозрачные."""
     rgb = load('heart-wreath.webp')
@@ -252,7 +197,6 @@ def save_full(name, rgb, alpha, quality=86):
 
 
 def backgrounds():
-    save('bg-hero', load('bg-hero.png'), quality=84)
     save('bg-sections', load('bg-sections.png'), quality=84)
 
 
@@ -297,16 +241,11 @@ def clear_field(rgb, alpha, seed_box, flat_tol=3.0, cream_tol=20, erode=7, extra
 
 
 def frames_new():
-    for name, box in [('frame-invite', (1050, 1300, 300, 640)), ('frame-place', (800, 1000, 340, 680)),
-                      ('frame-program', (850, 1100, 330, 600))]:
+    for name, box in [('frame-place', (800, 1000, 340, 680)), ('frame-program', (850, 1100, 330, 600))]:
         a = load_rgba(name + '.png')
         rgb, alpha = a[..., :3], a[..., 3] / 255
         print(name, alpha.shape)
         save_full(name, clear_field(rgb, alpha, box), alpha)   # без обрезки: проценты поля – от исходного кадра
-    rgb = load('frame-panel.png')
-    alpha = solidify(cut_checker(rgb, holes=12, lum_min=110, chroma_max=7), 30)
-    print('frame-panel', alpha.shape)
-    save_full('frame-panel', clear_field(rgb, alpha, (1000, 1200, 350, 650), extra=[(1350, 1470, 290, 705)]), alpha)
 
 
 def flowers_bottom():
@@ -330,8 +269,7 @@ def env_inside():
     save_full('env-inside', lining, np.ones((H, W)))
 
 
-ALL = {f.__name__: f for f in (heart_lace, blooms, heart_wreath, envelope_full, backgrounds,
-                                     frames_new, flowers_bottom, env_inside)}
+ALL = {f.__name__: f for f in (heart_wreath, envelope_full, backgrounds, frames_new, flowers_bottom, env_inside)}
 if __name__ == '__main__':
     for n in sys.argv[1:] or ALL:
         ALL[n.replace('-', '_')]()
