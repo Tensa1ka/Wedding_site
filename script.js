@@ -11,21 +11,6 @@
 
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
-  /* ---------- Разбивка текста на буквы (для волн появления) ---------- */
-  function splitLetters(el) {
-    var text = el.textContent;
-    el.setAttribute("aria-label", text);
-    el.textContent = "";
-    Array.prototype.forEach.call(text, function (ch, i) {
-      var s = document.createElement("span");
-      s.textContent = ch;
-      s.setAttribute("aria-hidden", "true");
-      s.style.setProperty("--i", i);
-      el.appendChild(s);
-    });
-  }
-  document.querySelectorAll("[data-letters]").forEach(splitLetters);
-
   /* рукописные заголовки: содержимое – во внутренний слой, который раскрывается маской */
   document.querySelectorAll("[data-write]").forEach(function (el) {
     var ink = document.createElement("span");
@@ -140,28 +125,11 @@
     reveal();
   }
 
-  /* ---------- Световая пыль на обложке ---------- */
-  var dust = document.querySelector(".dust");
-  if (dust && !reduceMotion) {
-    for (var d = 0; d < 18; d++) {
-      var p = document.createElement("i");
-      var dur = 10 + Math.random() * 9;
-      p.style.left = (6 + Math.random() * 88) + "%";
-      p.style.setProperty("--s", (2 + Math.random() * 4).toFixed(1) + "px");
-      p.style.setProperty("--d", dur.toFixed(1) + "s");
-      p.style.setProperty("--delay", (-Math.random() * dur).toFixed(1) + "s");
-      p.style.setProperty("--x", ((Math.random() - .5) * 80).toFixed(0) + "px");
-      dust.appendChild(p);
-    }
-  }
-
   /* ---------- Появления при прокрутке ---------- */
   document.querySelectorAll(".col").forEach(function (col) {
     col.querySelectorAll("[data-reveal]").forEach(function (el, i) { el.style.setProperty("--i", i % 4); });
   });
-  document.querySelectorAll(".cal > span").forEach(function (el, i) { el.style.setProperty("--i", i); });
   document.querySelectorAll(".prog li").forEach(function (el, i) { el.style.setProperty("--i", i); });
-  document.querySelectorAll(".swatches li").forEach(function (el, i) { el.style.setProperty("--i", i); });
 
   function settleLater(el) {
     if (el.hasAttribute("data-bloom")) setTimeout(function () { el.classList.add("is-settled"); }, 2800);
@@ -248,10 +216,19 @@
     else window.addEventListener("resize", sizeOutline);
   }
 
-  /* ---------- Анкета → Google Форма ---------- */
+  /* ---------- Анкета → Google Форма ----------
+     Ответ выбирается прямо на картинке (кружки и кнопка нарисованы, поверх – настоящие элементы),
+     имя спрашиваем в окне, затем отправляем оба поля */
   var form = document.getElementById("rsvp-form");
+  var ask = document.getElementById("rsvp-ask");
+  var step = document.getElementById("rsvp-step");
   var done = document.getElementById("rsvp-done");
   var errBox = document.getElementById("rsvp-error");
+  var ANSWER = "entry.87327526", NAME = "entry.225506798";
+
+  function isOpen() { return ask.hasAttribute("open"); }
+  function openAsk() { if (typeof ask.showModal === "function") ask.showModal(); else ask.setAttribute("open", ""); }
+  function closeAsk() { if (typeof ask.close === "function") ask.close(); else ask.removeAttribute("open"); }
   function showError(msg) {
     errBox.textContent = msg;
     errBox.hidden = false;
@@ -260,42 +237,62 @@
         { duration: 320, easing: "ease-out" });
     }
   }
-  if (form && window.fetch) {
-    form.addEventListener("submit", function (ev) {
-      ev.preventDefault();
-      errBox.hidden = true;
-      var name = form.elements["entry.225506798"];
-      var answer = form.querySelector('input[name="entry.87327526"]:checked');
-      if (!name.value.trim()) { showError("Пожалуйста, напишите имя и фамилию."); name.focus(); return; }
-      if (!answer) { showError("Пожалуйста, выберите вариант ответа."); return; }
 
-      var btn = form.querySelector(".btn");
-      btn.classList.add("is-busy");
+  if (form && ask) {
+    var radios = form.querySelectorAll('input[name="' + ANSWER + '"]');
+    var nameInput = ask.querySelector('[name="' + NAME + '"]');
+    var sendBtn = ask.querySelector("#rsvp-step .btn");
+    radios.forEach(function (r) { r.addEventListener("change", function () { radios[0].setCustomValidity(""); }); });
+    nameInput.addEventListener("input", function () { nameInput.setCustomValidity(""); });
+    ask.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", closeAsk); });
+    // нажатие на затемнение вокруг окна закрывает его
+    ask.addEventListener("click", function (ev) {
+      if (ev.target !== ask) return;
+      var r = ask.getBoundingClientRect();
+      if (ev.clientX < r.left || ev.clientX > r.right || ev.clientY < r.top || ev.clientY > r.bottom) closeAsk();
+    });
+
+    form.addEventListener("submit", function (ev) {
+      if (!window.fetch) return;   // старый браузер: обычная отправка формы в новой вкладке
+      ev.preventDefault();
+      var answer = form.querySelector('input[name="' + ANSWER + '"]:checked');
+      if (!answer) {
+        radios[0].setCustomValidity("Пожалуйста, выберите вариант ответа.");
+        radios[0].reportValidity();
+        return;
+      }
+      if (!isOpen()) {
+        errBox.hidden = true;
+        openAsk();
+        nameInput.focus();
+        return;
+      }
+      var name = nameInput.value.trim();
+      if (!name) {
+        nameInput.setCustomValidity("Пожалуйста, напишите имя и фамилию.");
+        nameInput.reportValidity();
+        return;
+      }
+
+      errBox.hidden = true;
+      sendBtn.classList.add("is-busy");
       var data = new URLSearchParams();
-      data.append("entry.225506798", name.value.trim());
-      data.append("entry.87327526", answer.value);
+      data.append(NAME, name);
+      data.append(ANSWER, answer.value);
 
       // Google Формы не отвечают на CORS-запросы, поэтому ответ «непрозрачный»:
       // успешная отправка = запрос дошёл без сетевой ошибки
       fetch(form.action, { method: "POST", mode: "no-cors", body: data })
         .then(function () {
-          var swap = function () {
-            form.hidden = true;
-            done.hidden = false;
-            done.focus({ preventScroll: true });
-            if (canAnimate && !reduceMotion) {
-              done.animate([{ opacity: 0, transform: "translateY(12px)", filter: "blur(4px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }],
-                { duration: 700, easing: "cubic-bezier(.23,1,.32,1)" });
-            }
-          };
-          if (canAnimate && !reduceMotion) {
-            form.animate([{ opacity: 1, filter: "blur(0)" }, { opacity: 0, filter: "blur(4px)" }], { duration: 260, easing: "ease-out", fill: "forwards" }).onfinish = swap;
-          } else {
-            swap();
-          }
+          form.classList.add("is-sent");
+          radios.forEach(function (r) { r.disabled = true; });
+          form.querySelector(".hit--send").disabled = true;
+          step.hidden = true;
+          done.hidden = false;
+          done.focus({ preventScroll: true });
         })
         .catch(function () {
-          btn.classList.remove("is-busy");
+          sendBtn.classList.remove("is-busy");
           showError("Не получилось отправить. Проверьте интернет и попробуйте ещё раз.");
         });
     });

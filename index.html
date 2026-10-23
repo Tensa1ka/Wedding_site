@@ -12,6 +12,7 @@
   <link rel="preload" href="assets/img/env-flap.webp" as="image">
   <link rel="preload" href="assets/img/env-seal.webp" as="image">
   <link rel="preload" href="assets/img/env-inside.webp" as="image">
+  <link rel="preload" href="assets/img/hero.jpg" as="image">
   <link rel="preload" href="assets/fonts/cormorant-cyr.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/greatvibes-cyr.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
@@ -52,62 +53,25 @@
     </div>
   </div>
 
-  <!-- ============ ОБЛОЖКА ============ -->
+  <!-- ============ ОБЛОЖКА: присланное фото сердца с фоном, как есть ============ -->
   <header class="hero" id="top">
-    <div class="hero__stage">
-      <div class="dust" aria-hidden="true"></div>
-      <div class="col hero__col">
-        <p class="hero__kicker" data-letters>Wedding Day</p>
-        <div class="heart">
-          <img class="heart__img" src="assets/img/heart.webp" alt="" width="1000" height="893">
-          <span class="heart__shine" aria-hidden="true"></span>
-          <div class="heart__text">
-            <h1 class="heart__names">
-              <span>Фёдор <i>&amp;</i></span>
-              <span>Ирина</span>
-            </h1>
-            <p class="heart__date">21.07.2027</p>
-          </div>
-        </div>
-        <a class="scroll-hint" href="#invite">
-          <span>Листайте вниз</span>
-          <svg viewBox="0 0 24 12" aria-hidden="true"><path d="M2 2l10 8 10-8"/></svg>
-        </a>
-      </div>
-      <img class="hero__bloom hero__bloom--l" src="assets/img/bloom-wide.webp" alt="" aria-hidden="true" width="661" height="421">
-      <img class="hero__bloom hero__bloom--r" src="assets/img/bloom-spray.webp" alt="" aria-hidden="true" width="495" height="340">
-    </div>
+    <!-- то же фото, размытое, заполняет экран по краям, если пропорции экрана другие -->
+    <img class="hero__fill" src="assets/img/hero.jpg" alt="" aria-hidden="true" width="363" height="637" decoding="async">
+    <img class="hero__photo" src="assets/img/hero.jpg" alt="" width="363" height="637" decoding="async">
+    <h1 class="sr-only">Фёдор и Ирина – 21.07.2027</h1>
   </header>
 
   <main>
-    <!-- ============ ПРИГЛАШЕНИЕ И КАЛЕНДАРЬ ============ -->
+    <!-- ============ ПРИГЛАШЕНИЕ И КАЛЕНДАРЬ: присланная рамка, как есть ============ -->
     <section class="sec sec--invite" id="invite">
       <div class="col">
-        <div class="arch" data-reveal="rise">
-          <div class="arch__body">
-            <h2 class="title" data-write>Дорогие<br>родные и близкие!</h2>
-            <p class="text" data-reveal>
-              Мы будем счастливы разделить с вами день, наполненный любовью,
-              теплом и радостными моментами.
-            </p>
-            <p class="text" data-reveal>
-              С нетерпением ждём вас, чтобы вместе создать воспоминания,
-              которые останутся с нами навсегда!
-            </p>
-
-            <h3 class="title title--month" data-write>Июль</h3>
-            <p class="cal__year" data-reveal>2027</p>
-            <div class="cal" data-inview role="img" aria-label="Июль 2027 года, день свадьбы – среда, 21 июля">
-              <span class="cal__wd">пн</span><span class="cal__wd">вт</span><span class="cal__wd">ср</span><span class="cal__wd">чт</span><span class="cal__wd">пт</span><span class="cal__wd">сб</span><span class="cal__wd">вс</span>
-              <i></i><i></i><i></i>
-              <span>1</span><span>2</span><span>3</span><span>4</span>
-              <span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span>
-              <span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span>
-              <span>19</span><span>20</span>
-              <span class="cal__day"><svg viewBox="0 0 64 58" aria-hidden="true"><path pathLength="1" d="M32 56C20 47 3 36 3 21C3 11 10 5 18.5 5C25 5 29.5 8.5 32 13.5C34.5 8.5 39 5 45.5 5C54 5 61 11 61 21C61 36 44 47 32 56Z"/></svg><b>21</b></span>
-              <span>22</span><span>23</span><span>24</span><span>25</span>
-              <span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span>
-            </div>
+        <div class="card" data-reveal="rise">
+          <img class="card__img" src="assets/img/card-invite.webp" alt="" width="667" height="2000" loading="lazy" decoding="async">
+          <div class="sr-only">
+            <h2>Дорогие родные и близкие!</h2>
+            <p>Мы будем счастливы разделить с вами день, наполненный любовью, теплом и радостными моментами.</p>
+            <p>С нетерпением ждём вас, чтобы вместе создать воспоминания, которые останутся с нами навсегда!</p>
+            <p>Июль 2027 года, день свадьбы – среда, 21 июля.</p>
           </div>
         </div>
       </div>
@@ -118,7 +82,6 @@
       <div class="col">
         <div class="oval" data-reveal="frame">
           <img class="oval__img" src="assets/img/frame-place.webp" alt="" width="1024" height="1536" loading="lazy" decoding="async">
-          <span class="shine shine--oval" aria-hidden="true"></span>
           <div class="oval__text">
             <h2 class="title" data-write>Адрес</h2>
             <p class="venue" data-reveal>«Хрустальный Сад»</p>
@@ -135,7 +98,6 @@
       <div class="col">
         <div class="frame" data-reveal="frame">
           <img class="frame__img" src="assets/img/frame-program.webp" alt="" width="1024" height="1536" loading="lazy" decoding="async">
-          <span class="shine shine--frame" aria-hidden="true"></span>
           <div class="frame__card">
             <h2 class="title" data-write>Программа</h2>
             <ol class="prog" data-inview>
@@ -149,67 +111,57 @@
       </div>
     </section>
 
-    <!-- ============ ДРЕСС-КОД · ФОТО · АНКЕТА ============ -->
-    <section class="sec sec--panel">
+    <!-- ============ ДРЕСС-КОД · ФОТО · АНКЕТА: присланная рамка, как есть ============ -->
+    <!-- кружки и кнопка нарисованы на картинке: поверх них лежат настоящие, невидимые элементы формы -->
+    <section class="sec sec--panel" id="dress">
       <div class="col">
-        <div class="panel" data-reveal="rise">
-          <div class="panel__part" id="dress">
-            <h2 class="title" data-write>Дресс-код</h2>
-            <p class="text" data-reveal>
-              Мы будем очень рады, если в своих образах вы поддержите
-              цветовую гамму нашего дня:
-            </p>
-            <ul class="swatches" data-inview>
-              <li style="--c:#e0c6af"><i></i>Шампань</li>
-              <li style="--c:#c4ae9d"><i></i>Светлый тауп</li>
-              <li style="--c:#e3bfb9"><i></i>Нежно-розовый</li>
-              <li style="--c:#c58e88"><i></i>Пыльная роза</li>
-              <li style="--c:#e6b39c"><i></i>Пыльный персик</li>
-              <li style="--c:#b2c7d6"><i></i>Пудровый голубой</li>
-              <li style="--c:#8299a3"><i></i>Серо-голубой</li>
-              <li style="--c:#c09553"><i></i>Мягкое золото</li>
-            </ul>
+        <div class="card card--dress" data-reveal="rise">
+          <img class="card__img" src="assets/img/card-dress.webp" alt="" width="778" height="2000" loading="lazy" decoding="async">
+          <div class="sr-only">
+            <h2>Дресс-код</h2>
+            <p>Мы не хотим ограничивать вас в выборе нарядов, ведь самое главное для нас – ваше присутствие и хорошее настроение!</p>
+            <p>Однако будем рады, если в этот особенный день вы отдадите предпочтение светлым, нежным и приглушённым оттенкам, избегая слишком ярких и мрачных цветов.</p>
+            <p>А белый цвет мы с любовью просим оставить для невесты.</p>
+            <h2 id="photo">Фото</h2>
+            <p>После праздника, когда фото будут готовы, здесь появится ссылка на свадебный альбом!</p>
+            <h2 id="rsvp">Анкета</h2>
           </div>
-
-          <div class="panel__part" id="photo">
-            <h2 class="title" data-write>Фото</h2>
-            <p class="text" data-reveal>
-              После праздника, когда фото будут готовы, здесь появится
-              ссылка на свадебный альбом!
-            </p>
-          </div>
-
-          <div class="panel__part" id="rsvp">
-            <h2 class="title" data-write>Анкета</h2>
-            <p class="text" data-reveal>
-              Пожалуйста, подтвердите присутствие до 1 июня 2027 года,
-              чтобы мы смогли спланировать всё наилучшим образом!
-            </p>
-            <form class="rsvp" id="rsvp-form" data-inview
-                  action="https://docs.google.com/forms/d/e/1FAIpQLSe4BrtPvw5_LbyWcVfD28BD3UFVkCT_nhqsxXx3hOm8lzBYHQ/formResponse"
-                  method="post" target="_blank" novalidate>
-              <label class="field">
-                <span class="field__label">Имя и фамилия</span>
-                <input class="field__input" type="text" name="entry.225506798" autocomplete="name" required>
-              </label>
-              <fieldset class="choice">
-                <legend class="field__label">Сможете ли вы присутствовать на нашем празднике?</legend>
-                <label class="radio"><input type="radio" name="entry.87327526" value="С радостью буду!" required><i></i><span>С радостью буду!</span></label>
-                <label class="radio"><input type="radio" name="entry.87327526" value="К сожалению, не смогу"><i></i><span>К сожалению, не смогу</span></label>
-              </fieldset>
-              <p class="rsvp__error" id="rsvp-error" role="alert" hidden></p>
-              <button class="btn" type="submit"><span>Отправить</span></button>
-            </form>
-            <div class="rsvp-done" id="rsvp-done" tabindex="-1" hidden>
-              <img class="rsvp-done__heart" src="assets/img/heart-wreath.webp" alt="" aria-hidden="true" width="531" height="478" loading="lazy" decoding="async">
-              <p class="title title--small">Спасибо!</p>
-              <p class="text">Ваш ответ получен. До встречи на празднике!</p>
-            </div>
-          </div>
+          <form class="rsvp" id="rsvp-form"
+                action="https://docs.google.com/forms/d/e/1FAIpQLSe4BrtPvw5_LbyWcVfD28BD3UFVkCT_nhqsxXx3hOm8lzBYHQ/formResponse"
+                method="post" target="_blank" novalidate>
+            <fieldset class="rsvp__choice">
+              <legend class="sr-only">Сможете ли вы присутствовать на нашем празднике?</legend>
+              <label class="hit hit--yes"><input type="radio" name="entry.87327526" value="С радостью буду!" required><i></i><span class="sr-only">С радостью буду!</span></label>
+              <label class="hit hit--no"><input type="radio" name="entry.87327526" value="К сожалению, не смогу"><i></i><span class="sr-only">К сожалению, не смогу</span></label>
+            </fieldset>
+            <button class="hit hit--send" type="submit"><span class="sr-only">Отправить</span></button>
+          </form>
         </div>
       </div>
     </section>
   </main>
+
+<!-- ============ АНКЕТА: имя и ответ – в окне поверх страницы ============ -->
+  <dialog class="ask" id="rsvp-ask" aria-labelledby="rsvp-ask-title">
+    <button class="ask__close" type="button" data-close aria-label="Закрыть">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="ask__step" id="rsvp-step">
+      <p class="title ask__title" id="rsvp-ask-title">Как вас зовут?</p>
+      <label class="field">
+        <span class="field__label">Имя и фамилия</span>
+        <input class="field__input" type="text" name="entry.225506798" form="rsvp-form" autocomplete="name" required>
+      </label>
+      <p class="rsvp__error" id="rsvp-error" role="alert" hidden></p>
+      <button class="btn" type="submit" form="rsvp-form"><span>Отправить</span></button>
+    </div>
+    <div class="ask__step rsvp-done" id="rsvp-done" tabindex="-1" hidden>
+      <img class="rsvp-done__heart" src="assets/img/heart-wreath.webp" alt="" aria-hidden="true" width="531" height="478" loading="lazy" decoding="async">
+      <p class="title ask__title">Спасибо!</p>
+      <p class="text">Ваш ответ получен. До встречи на празднике!</p>
+      <button class="btn" type="button" data-close><span>Закрыть</span></button>
+    </div>
+  </dialog>
 
   <!-- ============ ФИНАЛ ============ -->
   <footer class="finale">
