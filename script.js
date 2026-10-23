@@ -86,36 +86,35 @@
       return;
     }
 
-    var card = intro.querySelector(".env__card");
-    var flap = intro.querySelector(".env__flap");
+    var q = function (s) { return intro.querySelector(s); };
+    var lift = "cubic-bezier(.5,0,.22,1)";
 
-    // 0–0,45 с: печать отзывается на нажатие
-    openBtn.animate(
-      [{ transform: "scale(1)" }, { transform: "scale(.94)", offset: .35 }, { transform: "scale(1.02)", offset: .7 }, { transform: "scale(1)" }],
-      { duration: 450, easing: "cubic-bezier(.23,1,.32,1)" }
+    // 0–0,32 с: печать отзывается на нажатие
+    openBtn.querySelector("img").animate(
+      [{ transform: "scale(1)" }, { transform: "scale(.95)", offset: .4 }, { transform: "scale(1)" }],
+      { duration: 320, easing: "cubic-bezier(.23,1,.32,1)" }
     );
-    // 0,45–3 с: клапан вместе с печатью откидывается вверх на петле
-    flap.animate(
-      [{ transform: "rotateX(0deg)" }, { transform: "rotateX(-12deg)", offset: .14 }, { transform: "rotateX(-180deg)" }],
-      { duration: 2550, delay: 450, easing: "cubic-bezier(.42,0,.22,1)", fill: "forwards" }
+    // 0,25–2 с: клапан вместе с печатью отклеивается, поднимается к зрителю и откидывается назад на петле
+    q(".env__flap").animate(
+      [{ transform: "rotateX(0deg)" }, { transform: "rotateX(7deg)", offset: .12 }, { transform: "rotateX(180deg)" }],
+      { duration: 1750, delay: 250, easing: lift, fill: "forwards" }
     );
-    // тень под клапаном ослабевает, по мере того как он поднимается
-    card.animate(
-      [{ filter: "brightness(1)" }, { filter: "brightness(1.04)" }],
-      { duration: 2400, delay: 600, easing: "ease-in-out", fill: "forwards" }
-    );
-    // 3–5 с: конверт целиком уезжает вниз, открывая обложку
-    envelope.animate(
-      [{ transform: "translateY(0)" }, { transform: "translateY(108%)" }],
-      { duration: 1900, delay: 3100, easing: "cubic-bezier(.65,0,.35,1)", fill: "forwards" }
-    );
-    intro.animate(
-      [{ backgroundColor: "rgba(239,228,211,1)" }, { backgroundColor: "rgba(239,228,211,0)" }],
-      { duration: 1500, delay: 3200, easing: "ease-out", fill: "forwards" }
-    );
+    q(".env__shade").animate([{ opacity: 0 }, { opacity: .2, offset: .12 }, { opacity: 1, offset: .5 }, { opacity: 1 }],
+      { duration: 1750, delay: 250, easing: lift, fill: "forwards" });
+    q(".env__back-shade").animate([{ opacity: 1 }, { opacity: 1, offset: .5 }, { opacity: .25 }],
+      { duration: 1750, delay: 250, easing: lift, fill: "forwards" });
+    // тень от клапана внутри конверта уходит, подкладка открывается
+    q(".env__cast").animate([{ opacity: 1 }, { opacity: 0 }],
+      { duration: 1400, delay: 350, easing: "ease-out", fill: "forwards" });
+    // 1,5–2,8 с: письмо выдвигается из кармана
+    q(".env__note").animate([{ transform: "translateY(0)" }, { transform: "translateY(-44%)" }],
+      { duration: 1300, delay: 1500, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
+    // 2,6–3,5 с: конверт растворяется на месте
+    intro.animate([{ opacity: 1 }, { opacity: 0 }],
+      { duration: 900, delay: 2600, easing: "ease-in-out", fill: "forwards" });
 
-    setTimeout(reveal, 3350);
-    setTimeout(function () { intro.remove(); }, 5100);
+    setTimeout(reveal, 2700);
+    setTimeout(function () { intro.remove(); }, 3600);
   }
 
   if (intro && openBtn) {
@@ -136,7 +135,7 @@
       show();
     }
     openBtn.addEventListener("click", openInvitation);
-    envelope.addEventListener("click", openInvitation);   // нажатие в любом месте конверта
+    intro.addEventListener("click", openInvitation);      // нажатие в любом месте экрана
   } else {
     reveal();
   }
