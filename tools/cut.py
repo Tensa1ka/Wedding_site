@@ -315,8 +315,23 @@ def flowers_bottom():
     save('flowers-bottom', rgb, alpha)
 
 
+def env_inside():
+    """Подкладка конверта (внутренняя сторона и изнанка клапана): та же бумага, без узора."""
+    a = load_rgba('envelope2.png')[86:1614, 45:902]
+    rgb, alpha = a[..., :3], a[..., 3] / 255
+    H, W = alpha.shape
+    flap = poly_mask((H, W), ENV_FLAP)
+    px = rgb[(alpha > .99) & ~flap][::7]
+    paper = np.median(px[px.mean(1) > np.percentile(px.mean(1), 70)], 0)
+    rng = np.random.default_rng(12)
+    fibre = ndi.gaussian_filter(rng.normal(0, 1, (H, W)), (6, 1.2))          # продольные волокна бумаги
+    fibre = fibre / fibre.std() * 2.2 + ndi.gaussian_filter(rng.normal(0, 1.4, (H, W)), .8)
+    lining = paper * np.array([.97, .96, .94]) + fibre[..., None]
+    save_full('env-inside', lining, np.ones((H, W)))
+
+
 ALL = {f.__name__: f for f in (heart_lace, blooms, heart_wreath, envelope_full, backgrounds,
-                                     frames_new, flowers_bottom)}
+                                     frames_new, flowers_bottom, env_inside)}
 if __name__ == '__main__':
     for n in sys.argv[1:] or ALL:
         ALL[n.replace('-', '_')]()

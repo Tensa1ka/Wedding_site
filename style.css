@@ -88,8 +88,8 @@ h1, h2, h3, p { margin: 0; }
 
 /* =========================================================
    Лицо открытки: конверт на весь экран
-   Верхний клапан держится на петле у верхнего края и откидывается вместе с печатью –
-   части конверта не расходятся, печать не ломается. Затем конверт уезжает вниз.
+   Клапан на петле у верхнего края поднимается к зрителю и откидывается назад вместе с печатью;
+   внутри видна подкладка и письмо, которое выдвигается из кармана. Затем конверт растворяется.
    ========================================================= */
 .intro { display: none; padding: 0; background: #efe4d3; }
 .js .intro {
@@ -99,19 +99,66 @@ h1, h2, h3, p { margin: 0; }
   display: block;
   overflow: hidden;
   touch-action: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.envelope { position: absolute; inset: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-/* карточка конверта всегда закрывает экран целиком (как cover) */
+.envelope { position: absolute; inset: 0; }
+/* конверт всегда закрывает экран целиком (как cover); +6 % – скруглённые углы картинки уходят за край */
 .env__card {
+  --env-h: calc(max(100svh, 100vw / .5609) * 1.06);
   position: absolute;
   top: 50%;
   left: 50%;
-  width: max(100vw, 100svh * .5609);
-  height: max(100svh, 100vw / .5609);
+  width: calc(max(100vw, 100svh * .5609) * 1.06);
+  height: var(--env-h);
   translate: -50% -50%;
-  perspective: calc(max(100svh, 100vw / .5609) * 3);   /* глубина – от размера конверта: откинутый клапан не «наезжает» на экран */
+  perspective: calc(var(--env-h) * 2.4);
+  perspective-origin: 50% 30%;
 }
-.env__body, .env__flap-front { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; }
+.env__body, .env__flap-front, .env__pocket img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; }
+
+/* форма выреза под клапаном */
+.env__inside, .env__cast, .env__letter { clip-path: polygon(0 0, 100% 0, 100% 8.77%, 48.42% 50.72%, 0 10.14%); }
+.env__inside {
+  position: absolute;
+  inset: 0;
+  background: url(assets/img/env-inside.webp) 0 0 / 100% 100%;
+}
+.env__inside::after {   /* глубина кармана: темнее у петли */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(24, 22, 6, .5), rgba(24, 22, 6, .2) 22%, rgba(24, 22, 6, 0) 48%);
+}
+.env__cast {            /* тень от клапана – уходит, пока он поднимается */
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(18, 14, 2, .7), rgba(18, 14, 2, .35) 40%, rgba(18, 14, 2, .2));
+}
+.env__letter { position: absolute; inset: 0; clip-path: polygon(0 -80%, 100% -80%, 100% 8.77%, 48.42% 50.72%, 0 10.14%); container-type: inline-size; }
+.env__note {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 4.5%;
+  height: 56%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 8cqi;
+  border-radius: .8cqi;
+  background: linear-gradient(180deg, #fdfbf6, #f4eee1);
+  box-shadow: 0 -.6cqi 2.4cqi rgba(30, 24, 6, .3);
+}
+.env__note::before { content: ""; position: absolute; inset: 2.6cqi; border: 1px solid rgba(192, 149, 83, .75); border-radius: .4cqi; }
+.env__note-kicker { font-weight: 500; font-size: 3.4cqi; letter-spacing: .2em; text-transform: uppercase; color: var(--olive-soft); }
+.env__note-names { margin-top: 2.6cqi; font-family: var(--script); font-size: 9.6cqi; line-height: 1.05; color: var(--olive); }
+.env__note-date { margin-top: 2.2cqi; font-weight: 500; font-size: 3.8cqi; letter-spacing: .08em; color: var(--olive-ink); }
+/* передняя стенка кармана отбрасывает тень на письмо */
+.env__pocket { position: absolute; inset: 0; filter: drop-shadow(0 -3px 6px rgba(40, 30, 8, .28)); }
+.env__pocket img { clip-path: polygon(0 10.14%, 48.42% 50.72%, 100% 8.77%, 100% 100%, 0 100%); }
+
+/* клапан: две стороны в 3D, поворот вокруг верхнего края */
 .env__flap {
   position: absolute;
   inset: 0;
@@ -119,17 +166,25 @@ h1, h2, h3, p { margin: 0; }
   transform-style: preserve-3d;
   pointer-events: none;
 }
-.env__flap-front, .seal { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-/* изнанка клапана: та же бумага, что внутри конверта */
-.env__flap-back {
+.env__flap-front, .env__shade, .seal { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.env__shade {           /* лицо клапана темнеет, когда встаёт ребром к свету */
   position: absolute;
   inset: 0;
-  clip-path: polygon(100% 0, 0 0, 0 8.77%, 51.58% 50.72%, 100% 10.14%);   /* зеркально: после разворота совпадёт с клапаном */
-  background: linear-gradient(180deg, #e7d9c4, #efe3d0 60%, #e9dcc7);
-  transform: rotateY(180deg);   /* на месте клапана, лицом назад: после откидывания видна над конвертом */
+  background: linear-gradient(180deg, rgba(70, 52, 24, .1), rgba(70, 52, 24, .45));
+  -webkit-mask: url(assets/img/env-flap.webp) 0 0 / 100% 100% no-repeat;
+  mask: url(assets/img/env-flap.webp) 0 0 / 100% 100% no-repeat;
+  opacity: 0;
+}
+.env__flap-back {       /* изнанка клапана – та же подкладка, зеркально: после поворота совпадёт с формой */
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 100%, 100% 100%, 100% 91.23%, 48.42% 49.28%, 0 89.86%);
+  background: url(assets/img/env-inside.webp) 0 0 / 100% 100%;
+  transform: rotateX(180deg);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
+.env__back-shade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(18, 14, 2, .55), rgba(18, 14, 2, .15) 60%); }
 
 .seal {
   position: absolute;
@@ -141,7 +196,7 @@ h1, h2, h3, p { margin: 0; }
   border: 0;
   border-radius: 50%;
   background: none;
-  translate: -50% -50%;
+  translate: -50% -50% 1px;   /* чуть над клапаном – двигается с ним как одно целое */
   cursor: pointer;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
@@ -151,16 +206,16 @@ h1, h2, h3, p { margin: 0; }
 .seal:focus-visible { outline: 2px solid #8a6a1f; outline-offset: 6px; }
 @media (hover: hover) and (pointer: fine) {
   .seal { transition: transform .4s var(--ease-out); }
-  .envelope:hover .seal { transform: scale(1.03); }
+  .intro:hover .seal { transform: scale(1.03); }
   .seal:active { transform: scale(.96); transition-duration: .16s; }
 }
 .seal__img { width: 100%; height: 100%; filter: drop-shadow(0 8px 10px rgba(60, 40, 5, .35)); }
 
-/* появление: конверт проступает, печать ложится (без блеска и подписей) */
-.js .intro .env__card { opacity: 0; scale: 1.04; }
-.js .intro .seal { opacity: 0; scale: 1.3; }
-.intro.is-ready .env__card { opacity: 1; scale: 1; transition: opacity 1s ease, scale 1.6s var(--ease-out-soft); }
-.intro.is-ready .seal { opacity: 1; scale: 1; transition: opacity .7s ease .7s, scale 1s var(--ease-settle) .7s, transform .16s var(--ease-out); }
+/* появление: только прозрачность – без масштаба и размытия */
+.js .intro .env__card { opacity: 0; }
+.js .intro .seal { opacity: 0; }
+.intro.is-ready .env__card { opacity: 1; transition: opacity .9s ease; }
+.intro.is-ready .seal { opacity: 1; transition: opacity .7s ease .5s, transform .16s var(--ease-out); }
 
 /* =========================================================
    Обложка
@@ -301,7 +356,7 @@ h1, h2, h3, p { margin: 0; }
 
 /* --- обложка после открытия занавеса --- */
 .js .hero__stage { scale: 1.07; }
-.js .hero__kicker span { opacity: 0; translate: 0 .5em; filter: blur(5px); }
+.js .hero__kicker span { opacity: 0; translate: 0 .5em; }
 .js .heart__img { opacity: 0; scale: .9; }
 .js .heart__names span { clip-path: inset(-30% 104% -30% -12%); }
 .js .heart__date, .js .scroll-hint { opacity: 0; translate: 0 12px; }
@@ -310,7 +365,7 @@ h1, h2, h3, p { margin: 0; }
 .js .hero__bloom--r { opacity: 0; translate: 5% 24%; rotate: 6deg; }
 
 .is-opened .hero__stage { scale: 1; transition: scale 3s var(--ease-out-soft) .1s; }
-.is-opened .hero__kicker span { opacity: 1; translate: 0 0; filter: blur(0); transition: opacity .9s ease, translate 1.1s var(--ease-out), filter .9s ease; transition-delay: calc(.85s + var(--i, 0) * 45ms); }
+.is-opened .hero__kicker span { opacity: 1; translate: 0 0; transition: opacity .9s ease, translate 1.1s var(--ease-out); transition-delay: calc(.85s + var(--i, 0) * 45ms); }
 .is-opened .heart__img { opacity: 1; scale: 1; transition: opacity 1.4s ease 1s, scale 2.2s var(--ease-out-soft) 1s; }
 .is-opened .heart__shine::before { translate: 60% 0; transition: translate 1.8s var(--ease-in-out) 2.5s; }
 .is-opened .heart__names span { clip-path: inset(-30% -12% -30% -12%); transition: clip-path 1.5s var(--ease-write) 1.55s; }
