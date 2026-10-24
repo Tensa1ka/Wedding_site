@@ -95,7 +95,6 @@ h1, h2, h3, p { margin: 0; }
   text-wrap: balance;
 }
 .title + .text { margin-top: .85em; }
-.text--note { font-style: italic; font-size: clamp(15px, 4.1cqi, 20px); color: var(--ink-soft); }
 
 /* =========================================================
    Лицо открытки: конверт на весь экран
@@ -292,12 +291,12 @@ main {
 .sec--place { padding-block-end: clamp(48px, 9vw, 120px); }
 
 /* ---------- Карточки и рамки из присланных картинок ---------- */
-.card, .oval, .frame { position: relative; inline-size: 96cqi; margin-inline: auto; }
-.oval, .frame { container-type: inline-size; }
-.card__img, .oval__img, .frame__img { inline-size: 100%; filter: drop-shadow(0 22px 30px rgba(60, 62, 40, .16)); }
+.card, .frame { position: relative; inline-size: 96cqi; margin-inline: auto; }
+.frame { container-type: inline-size; }
+.card__img, .frame__img { inline-size: 100%; filter: drop-shadow(0 22px 30px rgba(60, 62, 40, .16)); }
 
 /* Широкие экраны (1920 × 1080, ноутбуки): секция – ровно экран, карточка целиком в нём, по центру.
-   Карточки с нарисованным текстом не уже 500 px, чтобы текст на них читался и на низких экранах. */
+   Карточки с мелким нарисованным текстом не уже 500 px (высокая «Дресс-код» – 420 px), чтобы текст читался и на низких экранах. */
 @media (min-aspect-ratio: 1 / 1) and (min-height: 600px) {
   .sec, .sec--invite, .sec--place {
     min-block-size: 100vh;
@@ -306,58 +305,25 @@ main {
     padding-block: 3.5vh;
     padding-block: 3.5svh;
   }
-  .card--invite { inline-size: min(96cqi, max(500px, 93svh * 915 / 1641)); }
-  .card--dress { inline-size: min(96cqi, max(500px, 93svh * 927 / 1572)); }
-  .oval, .frame { inline-size: min(96cqi, max(420px, 93svh * 1024 / 1536)); }
+  .card--invite { inline-size: min(96cqi, max(500px, 93svh * 942 / 1533)); }
+  .card--dress { inline-size: min(96cqi, max(420px, 93svh * 869 / 1775)); }
+  .card--place, .frame { inline-size: min(96cqi, max(420px, 93svh * 1024 / 1536)); }
 }
 
-/* ---------- Адрес: текст и орнаменты – как на присланном макете ---------- */
-.oval__text {
+/* ---------- Адрес: «Открыть на карте» нарисовано на картинке, поверх – ссылка (в процентах кадра 1024 × 1536) ---------- */
+.card__link {
   position: absolute;
-  inset: 24% 17% 22%;   /* поле рамки: x 18–82 %, y 20–78 % */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #4d4a2b;
+  inset-inline-start: 33.2%;
+  inset-block-start: 67.1%;
+  inline-size: 35.2%;
+  block-size: 4.7%;
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .2s ease;
 }
-.oval .title { font-size: 17.5cqi; line-height: 1; color: #555a2c; }
-.rule {
-  display: block;
-  inline-size: 48.9cqi;
-  aspect-ratio: 501 / 57;
-  margin-top: 1.25cqi;
-  background: url(assets/img/orn-rule.webp) 50% 50% / 100% 100% no-repeat;
-}
-.rule--short { inline-size: 24.5cqi; aspect-ratio: 251 / 57; margin-top: 1.8cqi; background-image: url(assets/img/orn-rule-short.webp); }
-.venue { margin-top: -.5cqi; font-weight: 500; font-size: 4.7cqi; letter-spacing: .03em; text-transform: uppercase; }
-.oval .text { max-width: none; margin-top: .85cqi; font-size: 4.45cqi; text-wrap: nowrap; }
-.oval .text--note { margin-top: -1.3cqi; max-width: 12em; font-size: 4.15cqi; line-height: 1.24; color: inherit; text-wrap: balance; }
-.link {
-  position: relative;
-  display: inline-block;
-  margin-top: 3.75cqi;
-  padding: 0 .1em .2em;
-  font-size: 4.65cqi;
-  font-weight: 500;
-  color: inherit;
-  text-decoration: none;
-  background: linear-gradient(#a98c58, #a98c58) 0 100% / 100% .45cqi no-repeat;
-  transition: background-size .35s var(--ease-out), transform .16s var(--ease-out);
-}
-.link::after {   /* подвеска с макета под линией */
-  content: "";
-  position: absolute;
-  inset-block-start: 100%;
-  inset-inline-start: 50%;
-  inline-size: 7.6cqi;
-  aspect-ratio: 78 / 34;
-  translate: -50% 0;
-  background: url(assets/img/orn-pendant.webp) 50% 0 / 100% 100% no-repeat;
-}
-.link:active { transform: scale(.97); }
-@media (hover: hover) and (pointer: fine) {
-  .link:hover { background-size: 0 .45cqi; background-position: 100% 100%; }
-}
+.card__link:focus-visible { outline: 2px solid var(--olive); outline-offset: 3px; }
+.card__link:active { background: rgba(86, 96, 42, .12); }
+@media (hover: hover) and (pointer: fine) { .card__link:hover { background: rgba(86, 96, 42, .08); } }
 
 /* ---------- Программа: как на присланном макете ---------- */
 .frame__card {
@@ -386,20 +352,20 @@ main {
 
 /* ---------- Анкета поверх картинки ----------
    Поле имени, кружки и кнопка «Отправить» нарисованы на картинке; над ними – настоящие элементы формы.
-   Координаты – в пикселях картинки 927 × 1572 (--u – один её пиксель). */
+   Координаты – в пикселях картинки 869 × 1775 (--u – один её пиксель). */
 .rsvp {
   position: absolute;
   inset: 0;
   container-type: size;
   pointer-events: none;
-  --u: calc(100cqw / 927);
+  --u: calc(100cqw / 869);
 }
 .rsvp__name {
   position: absolute;
-  inset-inline-start: calc(242 * var(--u));
-  inset-block-start: calc(1258 * var(--u));
-  inline-size: calc(586 * var(--u));
-  block-size: calc(42 * var(--u));
+  inset-inline-start: calc(166 * var(--u));
+  inset-block-start: calc(1349 * var(--u));
+  inline-size: calc(520 * var(--u));
+  block-size: calc(47 * var(--u));
   pointer-events: auto;
 }
 .rsvp__name input {
@@ -421,7 +387,7 @@ main {
 .rsvp__choice { margin: 0; padding: 0; border: 0; min-inline-size: 0; }
 .hit {
   position: absolute;
-  inset-inline-start: calc(243 * var(--u));
+  inset-inline-start: calc(163 * var(--u));
   inline-size: calc(340 * var(--u));
   block-size: calc(44 * var(--u));
   pointer-events: auto;
@@ -429,8 +395,8 @@ main {
   border-radius: calc(12 * var(--u));
   -webkit-tap-highlight-color: transparent;
 }
-.hit--yes { inset-block-start: calc(1374 * var(--u)); }
-.hit--no { inset-block-start: calc(1418 * var(--u)); }
+.hit--yes { inset-block-start: calc(1465 * var(--u)); }
+.hit--no { inset-block-start: calc(1509 * var(--u)); }
 /* сама радиокнопка – прозрачная, точно над нарисованным кружком (подсказка браузера укажет на него) */
 .hit input {
   position: absolute;
@@ -443,7 +409,7 @@ main {
   opacity: 0;
   cursor: pointer;
 }
-/* выбранный вариант: точка внутри нарисованного кружка (центр – 268 px по горизонтали) */
+/* выбранный вариант: точка внутри нарисованного кружка (центр – 188 px по горизонтали) */
 .hit i {
   position: absolute;
   inset-inline-start: calc(25 * var(--u));
@@ -461,10 +427,10 @@ main {
 .hit input:checked + i { opacity: 1; scale: 1; }
 .hit:has(input:focus-visible) { outline: 2px solid var(--olive); outline-offset: 2px; }
 .hit--send {
-  inset-inline-start: calc(365 * var(--u));
-  inset-block-start: calc(1470 * var(--u));
-  inline-size: calc(340 * var(--u));
-  block-size: calc(66 * var(--u));
+  inset-inline-start: calc(268 * var(--u));
+  inset-block-start: calc(1562 * var(--u));
+  inline-size: calc(283 * var(--u));
+  block-size: calc(64 * var(--u));
   padding: 0;
   border: 0;
   border-radius: 999px;

@@ -1,9 +1,9 @@
 """Готовит присланные картинки (tools/src) для сайта (assets/img).
 Фон листов – нарисованная «шахматка» вместо прозрачности: клетки, связанные с краем кадра, становятся прозрачными.
-Текст-образец в полях рамок «Адрес» и «Программа» убирается (текст – на сайте), золотые орнаменты с макетов
-сохраняются отдельными картинками. Обложка: присланное фото и его широкая версия 1920 × 1080 (и 2880 × 1620),
-продолженная вправо и влево тем же фоном. Карточки «Дорогие родные и близкие» и «Дресс-код · Фото · Анкета» –
-с присланным текстом, у первой убрана шахматка.
+Текст-образец в поле рамки «Программа» убирается (текст – на сайте), золотые стрелки с макета сохраняются
+отдельной картинкой. Обложка: присланное фото и его широкая версия 1920 × 1080 (и 2880 × 1620),
+продолженная вправо и влево тем же фоном. Карточки «Дорогие родные и близкие», «Адрес» и «Дресс-код · Фото · Анкета» –
+присланные рамки без изменений (убран только фон вокруг, «Адрес» приведён к кадру образца), текст – с присланных образцов.
 Запуск: python3 tools/cut.py [имя ...]  (нужны numpy, scipy, Pillow)"""
 import os
 import sys
@@ -201,46 +201,6 @@ def backgrounds():
     save('bg-sections', load('bg-sections.png'), quality=84)
 
 
-def clear_field(rgb, alpha, seed_box, flat_tol=3.0, cream_tol=20, erode=7, extra=()):
-    """Очищает внутреннее поле рамки от текста-образца: гладкая заливка по чистым пикселям поля."""
-    H, W = alpha.shape
-    lum = rgb.mean(2)
-    mean = ndi.uniform_filter(lum, 9)
-    flat = np.sqrt(np.clip(ndi.uniform_filter(lum ** 2, 9) - mean ** 2, 0, None)) < flat_tol
-    y0, y1, x0, x1 = seed_box
-    ref = np.median(rgb[y0:y1, x0:x1][flat[y0:y1, x0:x1]], 0)
-    cream = flat & (np.linalg.norm(rgb - ref, axis=2) < cream_tol) & (alpha > .9)
-    lab, _ = ndi.label(ndi.binary_opening(cream, iterations=2))
-    seed = np.zeros_like(cream)
-    seed[y0:y1, x0:x1] = True
-    field = np.isin(lab, np.unique(lab[seed & (lab > 0)]))
-    field = ndi.binary_fill_holes(ndi.binary_closing(field, iterations=8))
-    inner = ndi.binary_erosion(field, iterations=erode)
-    clean = inner & cream
-    yy, xx = np.mgrid[:H, :W]
-    X, Y = xx / W, yy / H
-    T = np.stack([np.ones_like(X), X, Y, X * X, Y * Y, X * Y], -1)
-    fill = np.zeros_like(rgb)
-    for c in range(3):
-        coef, *_ = np.linalg.lstsq(T[clean][::3], rgb[..., c][clean][::3], rcond=None)
-        fill[..., c] = T @ coef
-    rng = np.random.default_rng(4)
-    fill += ndi.gaussian_filter(rng.normal(0, 1.6, (H, W)), .8)[..., None]
-    # остатки надписей у края поля (заголовок под цветами, кнопка): оливковые штрихи в пределах поля
-    ys, xs = np.where(field)
-    box = (yy >= ys.min() - H * .07) & (yy <= ys.max()) & (xx >= xs.min()) & (xx <= xs.max())
-    R, G, B = rgb[..., 0], rgb[..., 1], rgb[..., 2]
-    ink = box & (lum < fill.mean(2) - 22) & (G - R > -14) & (G - B > 6) & (G - R < 18)   # без золота и листьев
-    ink = ndi.binary_dilation(ndi.binary_opening(ink, iterations=1), iterations=4)
-    for y0e, y1e, x0e, x1e in extra:                          # явные участки (контур нарисованной кнопки)
-        ink[y0e:y1e, x0e:x1e] = True
-    soft = np.maximum(ndi.gaussian_filter(inner.astype(float), 2), ndi.gaussian_filter(ink.astype(float), 1.5))[..., None]
-    out = rgb * (1 - soft) + fill * soft
-    ys, xs = np.where(inner)
-    print('  field x %.3f-%.3f y %.3f-%.3f' % (xs.min() / W, xs.max() / W, ys.min() / H, ys.max() / H))
-    return out
-
-
 def flowers_bottom():
     a = load_rgba('flowers-bottom.png')
     rgb, alpha = shrink(a[..., :3], a[..., 3] / 255, 1600)
@@ -329,53 +289,6 @@ def hero():
         print(f'{name}.jpg {im.width}x{im.height} {os.path.getsize(path) // 1024} KB')
 
 
-def shift(a, dy, dx):
-    return np.roll(np.roll(a, dy, 0), dx, 1)
-
-
-def card_invite():
-    """«Дорогие родные и близкие» с календарём: присланная картинка без нарисованной шахматки.
-    Клетки здесь серые (≈134 и ≈200, клетка ≈8 px): фон – нейтральные пиксели, связанные с краем,
-    плюс серые остатки у края и места, где клетки просвечивают сквозь бледные веточки."""
-    rgb = load('card-invite.jpg')
-    lum = rgb.mean(2)
-    chroma = rgb.max(2) - rgb.min(2)
-    m = ndi.uniform_filter(lum, 9)
-    sd = np.sqrt(np.clip(ndi.uniform_filter(lum ** 2, 9) - m ** 2, 0, None))
-    cand = (chroma <= 10) & (lum > 100) & (lum < 228)
-    lab, n = ndi.label(cand)
-    edge = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
-    bg = np.isin(lab, edge[edge > 0])
-    sizes = ndi.sum(cand, lab, range(1, n + 1))
-    tex = ndi.mean(sd, lab, range(1, n + 1))                 # закрытые просветы между завитками: клетчатые
-    ok = np.zeros(n + 1, bool)
-    ok[1:] = (sizes >= 60) & (tex > 18)
-    bg |= ok[lab]
-    loose = (chroma <= 18) & (lum > 105) & (lum < 218)       # JPEG подмешал цвет у края – не глубже 6 px
-    for _ in range(6):
-        bg |= ndi.binary_dilation(bg) & loose
-    # клетки сквозь полупрозрачное: соседи через полклетки сильно различаются, через клетку – похожи
-    half = np.abs(lum - shift(lum, 0, 8)) + np.abs(lum - shift(lum, 8, 0))
-    full = np.abs(lum - shift(lum, 0, 16)) + np.abs(lum - shift(lum, 16, 0))
-    checker = ndi.uniform_filter(half - full, 13) > 28
-    for _ in range(40):
-        bg |= ndi.binary_dilation(bg) & checker
-    bg = ndi.binary_closing(bg, iterations=1)
-    fg = ndi.binary_erosion(ndi.binary_opening(~bg, iterations=1), iterations=1)
-    alpha = ndi.gaussian_filter(fg.astype(float), .7)
-    save('card-invite', decontaminate(rgb, fg, alpha), alpha, quality=88)
-
-
-def decontaminate(rgb, fg, alpha):
-    """Цвет у края силуэта – от ближайших пикселей изнутри: без серого ореола от клеток."""
-    core = ndi.binary_erosion(fg, iterations=2)
-    _, (iy, ix) = ndi.distance_transform_edt(~core, return_indices=True)
-    ring = (alpha > 0) & ~core
-    out = rgb.copy()
-    out[ring] = rgb[iy[ring], ix[ring]]
-    return out
-
-
 def erase_text(rgb, alpha, seed_box, boxes):
     """Убирает надписи-образцы точечно: цветы и золото рядом остаются целыми.
     boxes – (y0, y1, x0, x1, mode): 'any' – всё, что отличается от бумаги (буквы, стрелки, ромбики),
@@ -418,18 +331,11 @@ def erase_text(rgb, alpha, seed_box, boxes):
     return out + grain * soft
 
 
-def frames():
-    """Рамки «Адрес» и «Программа» (присланные картинки с текстом): поле очищается, текст – на сайте.
+def frame_program():
+    """Рамка «Программа» (присланная картинка с текстом): поле очищается, текст – на сайте.
     Кадр не обрезается: проценты поля в style.css – от исходного кадра 1024 × 1536."""
-    a = load_rgba('frame-place.webp')
-    rgb, alpha = a[..., :3], np.clip(a[..., 3] / 252, 0, 1)   # альфа присланных webp – не выше 254
-    clean = clear_field(rgb, alpha, (1120, 1170, 420, 600))
-    save_full('frame-place', clean, alpha)
-    ornament('orn-rule', rgb, clean, (560, 622, 262, 766), clear=(560, 583, 262, 480))   # линия с лилией; без хвоста «А»
-    ornament('orn-rule-short', rgb, clean, (766, 827, 386, 643))
-    ornament('orn-pendant', rgb, clean, (1095, 1129, 474, 554))   # подвеска под «Открыть на карте» (линия – на сайте)
     a = load_rgba('frame-program.webp')
-    rgb, alpha = a[..., :3], np.clip(a[..., 3] / 252, 0, 1)
+    rgb, alpha = a[..., :3], np.clip(a[..., 3] / 252, 0, 1)   # альфа присланных webp – не выше 254
     boxes = [(420, 625, 255, 830, 'ink'),                     # «Программа» с росчерком – у лилий
              (630, 1240, 360, 640, 'any'),                    # время, подписи, стрелки с ромбиками
              (1240, 1285, 360, 690, 'any')]                   # «Завершение вечера»
@@ -456,15 +362,130 @@ def ornament(name, rgb, clean, box, clear=None):
     save(name, col, a, quality=92)
 
 
+# ---------- пятый набор: присланные рамки как есть, текст – с присланных образцов ----------
+# frame-1.webp, frame-2.webp – слои SVG «Рамка 1» и «Рамка 2», сведённые без изменений;
+# frame-pearl.webp – «Оригинальная жемчужно-золотая рамка» из Figma;
+# sample-*.jpg / sample-place.webp – образцы из архива «образец страниц сайта».
+
+def smooth_fill(rgb, known, sigma):
+    """Плавная заливка по известным пикселям (взвешенное гауссово среднее);
+    где известных рядом нет – тот же расчёт шире."""
+    out = np.zeros_like(rgb)
+    todo = np.ones(known.shape, bool)
+    for s in (sigma, sigma * 4, sigma * 16):
+        w = ndi.gaussian_filter(known.astype(float), s)
+        est = np.stack([ndi.gaussian_filter(rgb[..., c] * known, s) for c in range(3)], -1) / np.maximum(w, 1e-9)[..., None]
+        ok = todo & (w > .02)
+        out[ok] = est[ok]
+        todo &= ~ok
+    out[todo] = np.median(rgb[known], 0)
+    return out
+
+
+def paper_tone(img, region, k=4, size=9, tol=8):
+    """Тон бумаги без надписей: медиана по уменьшенной картинке, затем заливка по чистым пикселям."""
+    H, W = region.shape
+    small = np.asarray(Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).resize((W // k, H // k), Image.BOX))
+    med = np.stack([ndi.median_filter(small[..., c].astype(float), size=size) for c in range(3)], -1)
+    med = np.asarray(Image.fromarray(med.astype(np.uint8)).resize((W, H), Image.BILINEAR)).astype(float)
+    paper = np.median(med[region], 0)                          # крупные тёмные пятна (кнопка) – не бумага
+    known = region & (np.abs(img - med).max(2) < tol) & (np.abs(med - paper).max(2) < 30)
+    return smooth_fill(img, known, 6)
+
+
+def paper_field(rgb, alpha, seed, tol=16):
+    """Поле-бумага рамки: гладкие кремовые пиксели, связанные с точкой seed (y, x); надписи внутри – залиты."""
+    lum = rgb.mean(2)
+    m = ndi.uniform_filter(lum, 7)
+    sd = np.sqrt(np.clip(ndi.uniform_filter(lum ** 2, 7) - m ** 2, 0, None))
+    cream = (sd < 4) & (np.abs(rgb - rgb[seed]).max(2) < tol) & (alpha > .97)
+    lab, _ = ndi.label(ndi.binary_opening(cream, iterations=2))
+    field = lab == lab[seed]
+    return field, ndi.binary_fill_holes(ndi.binary_closing(field, iterations=10))
+
+
+def transfer_text(frame, sample, zone, same_frame, thr=10):
+    """Текст образца на присланную рамку: в пределах zone – пиксели образца, приведённые к тону бумаги рамки.
+    same_frame – в образце та же рамка: переносится всё, чем он от неё отличается (текст, кнопка, стёртые линии);
+    иначе – всё, что отличается от бумаги образца."""
+    s_bg = paper_tone(sample, zone)
+    f_bg = paper_tone(frame, zone)
+    adj = sample * (f_bg / np.maximum(s_bg, 1))
+    diff = np.abs(adj - frame).max(2) if same_frame else np.abs(sample - s_bg).max(2)
+    ink = (ndi.binary_opening(diff > thr, iterations=1) | (diff > 2.5 * thr)) & zone
+    soft = ndi.gaussian_filter((ndi.binary_dilation(ink, iterations=2) & zone).astype(float), 1)[..., None]
+    return frame * (1 - soft) + adj * soft
+
+
+def cut_black(rgb):
+    """Фон – чёрный: прозрачный, вместе с закрытыми просветами и тёмной каймой у края;
+    край силуэта – доля яркости от ближайшего пикселя изнутри (сглаживание без чёрного ореола)."""
+    mx = rgb.max(2)
+    dark = mx <= 10
+    lab, n = ndi.label(dark)
+    keep = np.zeros(n + 1, bool)
+    keep[1:] = ndi.sum(dark, lab, range(1, n + 1)) >= 6
+    bg = keep[lab]
+    for _ in range(3):
+        bg |= ndi.binary_dilation(bg) & (mx < 45)
+    fg = ndi.binary_opening(~bg, iterations=1)                 # без одиночных крошек
+    return edge_alpha(rgb, fg, lambda P, F: P.sum(2) / np.maximum(F.sum(2), 1), .4)
+
+
+def cut_white(rgb, white=254.):
+    """Фон – белый вокруг рамки: прозрачный; край – доля отличия от белого у ближайшего пикселя изнутри."""
+    cand = (rgb.mean(2) >= 240) & (rgb.max(2) - rgb.min(2) <= 6)
+    lab, n = ndi.label(cand)
+    edge = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
+    fg = ~np.isin(lab, edge[edge > 0])
+    return edge_alpha(rgb, fg, lambda P, F: (white - P).sum(2) / np.maximum((white - F).sum(2), 1), 0)
+
+
+def edge_alpha(rgb, fg, share, blur):
+    core = ndi.binary_erosion(fg, iterations=1)
+    _, (iy, ix) = ndi.distance_transform_edt(~core, return_indices=True)
+    F = rgb[iy, ix]
+    alpha = np.where(core, 1.0, np.where(fg, np.clip(share(rgb, F), 0, 1), 0.0))
+    col = np.where(core[..., None], rgb, F)
+    return col, ndi.gaussian_filter(alpha, blur) if blur else alpha
+
+
+def resize_rgba(rgb, alpha, size):
+    im = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), alpha * 255]).round().astype(np.uint8), 'RGBA')
+    a = np.asarray(im.convert('RGBa').resize(size, Image.LANCZOS).convert('RGBA')).astype(float)
+    return a[..., :3], a[..., 3] / 255
+
+
+def card_invite():
+    """«Дорогие родные и близкие» с календарём: «Рамка 1» (чёрный фон – прозрачный), текст – с образца."""
+    rgb, alpha = cut_black(load('frame-1.webp'))
+    _, field = paper_field(rgb, alpha, (900, 512))
+    zone = ndi.binary_dilation(field, iterations=14) & (alpha > .95)
+    save('card-invite', transfer_text(rgb, load('sample-invite.jpg'), zone, True), alpha, quality=88)
+
+
 def card_dress():
-    """«Дресс-код · Фото · Анкета» – присланная картинка как есть, только альфа доведена до 255 и кадр
-    обрезан по силуэту (сдвиг −7, −3 px: координаты поля, кружков и кнопки в style.css – уже в обрезанном кадре)."""
-    a = load_rgba('card-dress.webp')
-    save('card-dress', a[..., :3], np.clip(a[..., 3] / 252, 0, 1), quality=88)
+    """«Дресс-код · Фото · Анкета»: «Рамка 2» и текст, поле, кружки и кнопка – с образца.
+    Координаты поля, кружков и кнопки в style.css – в кадре этой картинки (869 × 1775)."""
+    a = load_rgba('frame-2.webp')
+    rgb, alpha = a[..., :3], np.clip(a[..., 3] / 252, 0, 1)
+    _, field = paper_field(rgb, alpha, (1000, 450))
+    zone = ndi.binary_dilation(field, iterations=14) & (alpha > .95)   # с запасом: кнопка заходит на орнамент
+    save('card-dress', transfer_text(rgb, load('sample-dress.jpg'), zone, True), alpha, quality=88)
+
+
+def card_place():
+    """«Адрес»: оригинальная жемчужная рамка (белый фон – прозрачный), приведённая к кадру образца 1024 × 1536;
+    текст с образца – в овале. Ссылка «Открыть на карте» в style.css – в процентах этого кадра."""
+    rgb, alpha = resize_rgba(*cut_white(load('frame-pearl.webp')), (1024, 1536))
+    s = load_rgba('sample-place.webp')[..., :3]
+    yy, xx = np.mgrid[:1536, :1024]
+    zone = (((xx - 513) / 330) ** 2 + ((yy - 765) / 460) ** 2 < 1) & (yy > 350) & (yy < 1135)   # текст – без рамки образца
+    save('card-place', transfer_text(rgb, s, zone, False), alpha, quality=88)
 
 
 ALL = {f.__name__: f for f in (heart_wreath, envelope_full, backgrounds, flowers_bottom, env_inside, hero,
-                               card_invite, frames, card_dress)}
+                               frame_program, card_invite, card_dress, card_place)}
 if __name__ == '__main__':
     for n in sys.argv[1:] or ALL:
         ALL[n.replace('-', '_')]()
