@@ -67,34 +67,45 @@
   </header>
 
   <main>
-    <!-- ============ ПРИГЛАШЕНИЕ И КАЛЕНДАРЬ: присланная «Рамка 1», текст – как на образце ============ -->
+    <!-- ============ ПРИГЛАШЕНИЕ И КАЛЕНДАРЬ: присланная «Рамка 1» – фон, текст и календарь живые ============ -->
     <section class="sec sec--invite" id="invite">
       <div class="col">
-        <div class="card card--invite" data-reveal="rise">
-          <img class="card__img" src="assets/img/card-invite.webp" alt="" width="942" height="1533" loading="lazy" decoding="async">
-          <div class="sr-only">
-            <h2>Дорогие родные и близкие!</h2>
-            <p>Мы будем счастливы разделить с вами день, наполненный любовью, теплом и радостными моментами.</p>
-            <p>С нетерпением ждём вас, чтобы вместе создать воспоминания, которые останутся с нами навсегда!</p>
-            <p>Июль 2027 года, день свадьбы – среда, 21 июля.</p>
+        <div class="panel panel--invite" data-reveal="frame">
+          <div class="panel__body">
+            <h2 class="title" data-write>Дорогие<br> родные и&nbsp;близкие!</h2>
+            <p class="text" data-reveal>Мы будем счастливы разделить<br class="br"> с вами день, наполненный любовью,<br class="br"> теплом и радостными моментами.</p>
+            <p class="text" data-reveal>С нетерпением ждём вас, чтобы<br class="br"> вместе создать воспоминания,<br class="br"> которые останутся с нами навсегда!</p>
+            <i class="divider" data-inview aria-hidden="true"><b></b></i>
+            <h3 class="title title--month" data-write>Июль</h3>
+            <p class="year" data-reveal><span>2027</span></p>
+            <div class="cal" data-inview aria-hidden="true">
+              <i>пн</i><i>вт</i><i>ср</i><i>чт</i><i>пт</i><i>сб</i><i>вс</i>
+              <span></span><span></span><span></span><span class="cal__day">1</span><span class="cal__day">2</span><span class="cal__day">3</span><span class="cal__day">4</span>
+              <span class="cal__day">5</span><span class="cal__day">6</span><span class="cal__day">7</span><span class="cal__day">8</span><span class="cal__day">9</span><span class="cal__day">10</span><span class="cal__day">11</span>
+              <span class="cal__day">12</span><span class="cal__day">13</span><span class="cal__day">14</span><span class="cal__day">15</span><span class="cal__day">16</span><span class="cal__day">17</span><span class="cal__day">18</span>
+              <span class="cal__day">19</span><span class="cal__day">20</span><span class="cal__day cal__day--heart">21</span><span class="cal__day">22</span><span class="cal__day">23</span><span class="cal__day">24</span><span class="cal__day">25</span>
+              <span class="cal__day">26</span><span class="cal__day">27</span><span class="cal__day">28</span><span class="cal__day">29</span><span class="cal__day">30</span><span class="cal__day">31</span>
+            </div>
+            <p class="sr-only">День свадьбы – среда, 21 июля 2027 года.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ============ АДРЕС: присланная жемчужная рамка, текст – как на образце ============ -->
-    <!-- «Открыть на карте» нарисовано на картинке: поверх лежит настоящая ссылка -->
+    <!-- ============ АДРЕС: присланная жемчужная рамка – фон, текст живой ============ -->
     <section class="sec sec--place" id="place">
       <div class="col">
-        <div class="card card--place" data-reveal="frame">
-          <img class="card__img" src="assets/img/card-place.webp" alt="" width="1024" height="1536" loading="lazy" decoding="async">
-          <div class="sr-only">
-            <h2>Адрес</h2>
-            <p>«Хрустальный Сад»</p>
-            <p>г. Москва, ул. Жужа, 37</p>
-            <p>Территория парка «Коломенское», недалеко от набережной Москвы-реки</p>
+        <div class="oval" data-reveal="frame">
+          <img class="oval__img" src="assets/img/frame-place.webp" alt="" width="1024" height="1536" loading="lazy" decoding="async">
+          <div class="oval__text">
+            <h2 class="title" data-write>Адрес</h2>
+            <i class="rule" data-inview aria-hidden="true"></i>
+            <p class="venue" data-reveal>«Хрустальный Сад»</p>
+            <p class="text" data-reveal>г. Москва, ул. Жужа, 37</p>
+            <i class="rule rule--short" data-inview aria-hidden="true"></i>
+            <p class="text text--note" data-reveal>Территория парка<br> «Коломенское», недалеко от<br> набережной Москвы-реки</p>
+            <a class="link" data-reveal href="https://yandex.ru/maps/?text=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C%20%D1%83%D0%BB%D0%B8%D1%86%D0%B0%20%D0%96%D1%83%D0%B6%D0%B0%2C%2037" target="_blank" rel="noopener">Открыть на карте</a>
           </div>
-          <a class="card__link" href="https://yandex.ru/maps/?text=%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%2C%20%D1%83%D0%BB%D0%B8%D1%86%D0%B0%20%D0%96%D1%83%D0%B6%D0%B0%2C%2037" target="_blank" rel="noopener"><span class="sr-only">Открыть на карте</span></a>
         </div>
       </div>
     </section>
@@ -117,36 +128,34 @@
       </div>
     </section>
 
-    <!-- ============ ДРЕСС-КОД · ФОТО · АНКЕТА: присланная «Рамка 2», текст – как на образце ============ -->
-    <!-- поле имени, кружки и кнопка нарисованы на картинке: поверх них лежат настоящие элементы формы -->
+    <!-- ============ ДРЕСС-КОД · ФОТО · АНКЕТА: присланная «Рамка 2» – фон, текст и анкета живые ============ -->
     <section class="sec sec--panel" id="dress">
       <div class="col">
-        <div class="card card--dress" data-reveal="rise">
-          <img class="card__img" src="assets/img/card-dress.webp" alt="" width="869" height="1775" loading="lazy" decoding="async">
-          <div class="sr-only">
-            <h2>Дресс-код</h2>
-            <p>Мы не хотим ограничивать вас в выборе нарядов, ведь самое главное для нас – ваше присутствие и хорошее настроение!</p>
-            <p>Однако будем рады, если в этот особенный день вы отдадите предпочтение светлым, нежным и приглушённым оттенкам, избегая слишком ярких и мрачных цветов.</p>
-            <p>А белый цвет мы с любовью просим оставить для невесты.</p>
-            <h2 id="photo">Фото</h2>
-            <p>После праздника, когда фото будут готовы, здесь появится ссылка на свадебный альбом!</p>
-            <h2 id="rsvp">Анкета</h2>
-            <p>Пожалуйста, подтвердите присутствие до 1 июня 2027 года, чтобы мы смогли спланировать всё наилучшим образом!</p>
+        <div class="panel panel--dress" data-reveal="frame">
+          <div class="panel__body">
+            <h2 class="title title--dress" data-write>Дресс-код</h2>
+            <p class="text text--right" data-reveal>Мы не хотим ограничивать вас в выборе<br class="br"> нарядов, ведь самое главное для нас –<br class="br"> ваше присутствие и хорошее настроение!</p>
+            <p class="text text--right" data-reveal>Однако будем рады, если в этот особенный<br class="br"> день вы отдадите предпочтение светлым,<br class="br"> нежным и приглушённым оттенкам,<br class="br"> избегая слишком ярких и мрачных цветов.</p>
+            <p class="text text--right text--lily" data-reveal>А белый цвет мы с любовью просим<br class="br"> оставить для невесты<img class="lily" data-bloom src="assets/img/orn-lily.webp" alt="" width="141" height="114" loading="lazy" decoding="async"></p>
+            <i class="divider" data-inview aria-hidden="true"><b></b></i>
+            <h2 class="title" id="photo" data-write>Фото</h2>
+            <p class="text text--left" data-reveal>После праздника, когда фото будут готовы,<br class="br"> здесь появится ссылка на свадебный альбом!</p>
+            <i class="divider" data-inview aria-hidden="true"><b></b></i>
+            <h2 class="title" id="rsvp" data-write>Анкета</h2>
+            <p class="text text--left" data-reveal>Пожалуйста, подтвердите присутствие<br class="br"> до 1 июня 2027 года, чтобы мы смогли<br class="br"> спланировать всё наилучшим образом!</p>
+            <form class="rsvp" id="rsvp-form"
+                  action="https://docs.google.com/forms/d/e/1FAIpQLSe4BrtPvw5_LbyWcVfD28BD3UFVkCT_nhqsxXx3hOm8lzBYHQ/formResponse"
+                  method="post" target="_blank" novalidate>
+              <label class="rsvp__label" for="rsvp-name" data-reveal>Имя и фамилия</label>
+              <input class="rsvp__field" id="rsvp-name" type="text" name="entry.225506798" autocomplete="name" required data-reveal>
+              <fieldset class="rsvp__choice" data-reveal>
+                <legend class="rsvp__label">Сможете ли вы присутствовать на&nbsp;нашем празднике?</legend>
+                <label class="rsvp__opt"><input type="radio" name="entry.87327526" value="С радостью буду!" required><span>С радостью буду!</span></label>
+                <label class="rsvp__opt"><input type="radio" name="entry.87327526" value="К сожалению, не смогу"><span>К сожалению, не смогу</span></label>
+              </fieldset>
+              <button class="rsvp__send" type="submit" data-reveal><span>Отправить</span></button>
+            </form>
           </div>
-          <form class="rsvp" id="rsvp-form"
-                action="https://docs.google.com/forms/d/e/1FAIpQLSe4BrtPvw5_LbyWcVfD28BD3UFVkCT_nhqsxXx3hOm8lzBYHQ/formResponse"
-                method="post" target="_blank" novalidate>
-            <label class="rsvp__name">
-              <span class="sr-only">Имя и фамилия</span>
-              <input type="text" name="entry.225506798" autocomplete="name" required>
-            </label>
-            <fieldset class="rsvp__choice">
-              <legend class="sr-only">Сможете ли вы присутствовать на нашем празднике?</legend>
-              <label class="hit hit--yes"><input type="radio" name="entry.87327526" value="С радостью буду!" required><i></i><span class="sr-only">С радостью буду!</span></label>
-              <label class="hit hit--no"><input type="radio" name="entry.87327526" value="К сожалению, не смогу"><i></i><span class="sr-only">К сожалению, не смогу</span></label>
-            </fieldset>
-            <button class="hit hit--send" type="submit"><span class="sr-only">Отправить</span></button>
-          </form>
         </div>
       </div>
     </section>

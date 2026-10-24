@@ -1,9 +1,8 @@
 """Готовит присланные картинки (tools/src) для сайта (assets/img).
 Фон листов – нарисованная «шахматка» вместо прозрачности: клетки, связанные с краем кадра, становятся прозрачными.
-Текст-образец в поле рамки «Программа» убирается (текст – на сайте), золотые стрелки с макета сохраняются
-отдельной картинкой. Обложка: присланное фото и его широкая версия 1920 × 1080 (и 2880 × 1620),
-продолженная вправо и влево тем же фоном. Карточки «Дорогие родные и близкие», «Адрес» и «Дресс-код · Фото · Анкета» –
-присланные рамки без изменений (убран только фон вокруг, «Адрес» приведён к кадру образца), текст – с присланных образцов.
+Рамки «Приглашение», «Адрес», «Программа», «Дресс-код» – без текста (текст – на сайте), золотые орнаменты
+с рамок и образцов – отдельными картинками. Обложка: присланное фото и его широкая версия 1920 × 1080 (и 2880 × 1620),
+продолженная вправо и влево тем же фоном. Новые рамки – как прислали: убран только фон вокруг, «Адрес» приведён к кадру образца.
 Запуск: python3 tools/cut.py [имя ...]  (нужны numpy, scipy, Pillow)"""
 import os
 import sys
@@ -362,10 +361,12 @@ def ornament(name, rgb, clean, box, clear=None):
     save(name, col, a, quality=92)
 
 
-# ---------- пятый набор: присланные рамки как есть, текст – с присланных образцов ----------
+# ---------- пятый набор: присланные рамки без текста (текст – на сайте), орнаменты – с образцов ----------
 # frame-1.webp, frame-2.webp – слои SVG «Рамка 1» и «Рамка 2», сведённые без изменений;
 # frame-pearl.webp – «Оригинальная жемчужно-золотая рамка» из Figma;
-# sample-*.jpg / sample-place.webp – образцы из архива «образец страниц сайта».
+# sample-*.jpg / sample-place.webp – образцы из архива «образец страниц сайта» (с них – лилия и линии «Адреса»).
+# На сайте прямоугольные рамки тянутся по высоте под текст: растягивается полоса с ровными планками
+# (строки 1020–1110 у «Рамки 1», 962–967 у «Рамки 2» – в кадре сохранённой картинки: только бумага и планки).
 
 def smooth_fill(rgb, known, sigma):
     """Плавная заливка по известным пикселям (взвешенное гауссово среднее);
@@ -388,33 +389,9 @@ def paper_tone(img, region, k=4, size=9, tol=8):
     small = np.asarray(Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).resize((W // k, H // k), Image.BOX))
     med = np.stack([ndi.median_filter(small[..., c].astype(float), size=size) for c in range(3)], -1)
     med = np.asarray(Image.fromarray(med.astype(np.uint8)).resize((W, H), Image.BILINEAR)).astype(float)
-    paper = np.median(med[region], 0)                          # крупные тёмные пятна (кнопка) – не бумага
+    paper = np.median(med[region], 0)
     known = region & (np.abs(img - med).max(2) < tol) & (np.abs(med - paper).max(2) < 30)
     return smooth_fill(img, known, 6)
-
-
-def paper_field(rgb, alpha, seed, tol=16):
-    """Поле-бумага рамки: гладкие кремовые пиксели, связанные с точкой seed (y, x); надписи внутри – залиты."""
-    lum = rgb.mean(2)
-    m = ndi.uniform_filter(lum, 7)
-    sd = np.sqrt(np.clip(ndi.uniform_filter(lum ** 2, 7) - m ** 2, 0, None))
-    cream = (sd < 4) & (np.abs(rgb - rgb[seed]).max(2) < tol) & (alpha > .97)
-    lab, _ = ndi.label(ndi.binary_opening(cream, iterations=2))
-    field = lab == lab[seed]
-    return field, ndi.binary_fill_holes(ndi.binary_closing(field, iterations=10))
-
-
-def transfer_text(frame, sample, zone, same_frame, thr=10):
-    """Текст образца на присланную рамку: в пределах zone – пиксели образца, приведённые к тону бумаги рамки.
-    same_frame – в образце та же рамка: переносится всё, чем он от неё отличается (текст, кнопка, стёртые линии);
-    иначе – всё, что отличается от бумаги образца."""
-    s_bg = paper_tone(sample, zone)
-    f_bg = paper_tone(frame, zone)
-    adj = sample * (f_bg / np.maximum(s_bg, 1))
-    diff = np.abs(adj - frame).max(2) if same_frame else np.abs(sample - s_bg).max(2)
-    ink = (ndi.binary_opening(diff > thr, iterations=1) | (diff > 2.5 * thr)) & zone
-    soft = ndi.gaussian_filter((ndi.binary_dilation(ink, iterations=2) & zone).astype(float), 1)[..., None]
-    return frame * (1 - soft) + adj * soft
 
 
 def cut_black(rgb):
@@ -456,36 +433,54 @@ def resize_rgba(rgb, alpha, size):
     return a[..., :3], a[..., 3] / 255
 
 
-def card_invite():
-    """«Дорогие родные и близкие» с календарём: «Рамка 1» (чёрный фон – прозрачный), текст – с образца."""
+def frame_invite():
+    """«Рамка 1» как есть, чёрный фон вокруг – прозрачный. С поля убраны разделитель, линии у года
+    и сердце с линиями (календарь на сайте живой): звёздочка и сердце – отдельными картинками."""
     rgb, alpha = cut_black(load('frame-1.webp'))
-    _, field = paper_field(rgb, alpha, (900, 512))
-    zone = ndi.binary_dilation(field, iterations=14) & (alpha > .95)
-    save('card-invite', transfer_text(rgb, load('sample-invite.jpg'), zone, True), alpha, quality=88)
+    boxes = [(935, 980, 395, 645, 'any'),                     # линия со звёздочкой
+             (1086, 1106, 312, 738, 'any'),                   # линии у «2027»
+             (1292, 1378, 265, 740, 'any')]                   # сердце у «21» с линиями
+    clean = erase_text(rgb, alpha, (800, 860, 300, 700), boxes)
+    save('frame-invite', clean, alpha, quality=88)
+    ornament('orn-sparkle', rgb, clean, (935, 980, 500, 538))
+    ornament('orn-heart', rgb, clean, (1292, 1378, 388, 492))
 
 
-def card_dress():
-    """«Дресс-код · Фото · Анкета»: «Рамка 2» и текст, поле, кружки и кнопка – с образца.
-    Координаты поля, кружков и кнопки в style.css – в кадре этой картинки (869 × 1775)."""
+def frame_dress():
+    """«Рамка 2» как есть; лилия у «оставить для невесты» – с образца, отдельной картинкой."""
     a = load_rgba('frame-2.webp')
     rgb, alpha = a[..., :3], np.clip(a[..., 3] / 252, 0, 1)
-    _, field = paper_field(rgb, alpha, (1000, 450))
-    zone = ndi.binary_dilation(field, iterations=14) & (alpha > .95)   # с запасом: кнопка заходит на орнамент
-    save('card-dress', transfer_text(rgb, load('sample-dress.jpg'), zone, True), alpha, quality=88)
+    save('frame-dress', rgb, alpha, quality=88)
+    y0, y1, x0, x1 = 812, 930, 650, 798
+    s = load('sample-dress.jpg')[y0:y1, x0:x1]
+    paper = np.median(s.reshape(-1, 3), 0)
+    s = s * np.median(rgb[y0:y1, x0:x1].reshape(-1, 3), 0) / paper     # бумага образца → тон бумаги рамки
+    corner = np.zeros(s.shape[:2], bool)
+    corner[:858 - y0, :688 - x0] = True                        # слева сверху – конец строки «просим»: стереть
+    s[ndi.binary_dilation(corner & (s.mean(2) < 200), iterations=2) & corner] = np.median(s.reshape(-1, 3), 0)
+    m = np.abs(s - np.median(s.reshape(-1, 3), 0)).max(2) > 10   # всё, что не бумага
+    m = ndi.binary_fill_holes(ndi.binary_closing(m, iterations=3))
+    lab, n = ndi.label(m)
+    m = lab == 1 + ndi.sum(m, lab, range(1, n + 1)).argmax()   # сама лилия с листьями
+    a = ndi.gaussian_filter(ndi.binary_dilation(m, iterations=1).astype(float), 1)
+    save('orn-lily', s, a, quality=90)
 
 
-def card_place():
-    """«Адрес»: оригинальная жемчужная рамка (белый фон – прозрачный), приведённая к кадру образца 1024 × 1536;
-    текст с образца – в овале. Ссылка «Открыть на карте» в style.css – в процентах этого кадра."""
+def frame_place():
+    """Оригинальная жемчужная рамка (белый фон – прозрачный) в кадре образца 1024 × 1536, без текста.
+    Линии с лилией и подвеска под «Открыть на карте» – с образца, отдельными картинками."""
     rgb, alpha = resize_rgba(*cut_white(load('frame-pearl.webp')), (1024, 1536))
+    save_full('frame-place', rgb, alpha, quality=88)
     s = load_rgba('sample-place.webp')[..., :3]
     yy, xx = np.mgrid[:1536, :1024]
-    zone = (((xx - 513) / 330) ** 2 + ((yy - 765) / 460) ** 2 < 1) & (yy > 350) & (yy < 1135)   # текст – без рамки образца
-    save('card-place', transfer_text(rgb, s, zone, False), alpha, quality=88)
+    clean = paper_tone(s, ((xx - 513) / 330) ** 2 + ((yy - 765) / 460) ** 2 < 1)
+    ornament('orn-rule', s, clean, (560, 622, 262, 766), clear=(560, 583, 262, 480))   # без хвоста «А»
+    ornament('orn-rule-short', s, clean, (766, 827, 386, 643))
+    ornament('orn-pendant', s, clean, (1095, 1129, 474, 554))   # подвеска под «Открыть на карте» (линия – на сайте)
 
 
 ALL = {f.__name__: f for f in (heart_wreath, envelope_full, backgrounds, flowers_bottom, env_inside, hero,
-                               frame_program, card_invite, card_dress, card_place)}
+                               frame_program, frame_invite, frame_dress, frame_place)}
 if __name__ == '__main__':
     for n in sys.argv[1:] or ALL:
         ALL[n.replace('-', '_')]()

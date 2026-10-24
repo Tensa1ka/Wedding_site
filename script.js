@@ -130,6 +130,7 @@
     col.querySelectorAll("[data-reveal]").forEach(function (el, i) { el.style.setProperty("--i", i % 4); });
   });
   document.querySelectorAll(".prog li").forEach(function (el, i) { el.style.setProperty("--i", i); });
+  document.querySelectorAll(".cal > *").forEach(function (el, i) { el.style.setProperty("--i", i); });
 
   function settleLater(el) {
     if (el.hasAttribute("data-bloom")) setTimeout(function () { el.classList.add("is-settled"); }, 2800);
@@ -217,7 +218,6 @@
   }
 
   /* ---------- Анкета → Google Форма ----------
-     Поле имени, кружки и кнопка нарисованы на картинке, поверх – настоящие элементы формы.
      После отправки в окне – «Спасибо!» (или просьба попробовать ещё раз) */
   var form = document.getElementById("rsvp-form");
   var ask = document.getElementById("rsvp-ask");
@@ -237,7 +237,7 @@
   if (form && ask) {
     var radios = form.querySelectorAll('input[name="' + ANSWER + '"]');
     var nameInput = form.querySelector('[name="' + NAME + '"]');
-    var sendBtn = form.querySelector(".hit--send");
+    var sendBtn = form.querySelector(".rsvp__send");
     radios.forEach(function (r) { r.addEventListener("change", function () { radios[0].setCustomValidity(""); }); });
     nameInput.addEventListener("input", function () { nameInput.setCustomValidity(""); });
     ask.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", closeAsk); });
