@@ -241,9 +241,9 @@ def min_cut(A, B, block):
 
 
 def hero_wide(ph, bg, W, H):
-    """Обложка для широких экранов: присланная сцена, продолженная вправо и влево.
+    """Фон обложки для широких экранов: присланная сцена без сердца, продолженная вправо и влево.
     Фон без сердца (bg-hero.png – тот же кадр) повторён слева и справа; стыки идут по линии
-    наименьшей разницы, поэтому шторы и цветы продолжаются без шва. Сердце – пиксели фото."""
+    наименьшей разницы, поэтому шторы и цветы продолжаются без шва. Сердце – отдельный слой (hero_heart)."""
     Hs = round(H * 1250 / 1080)               # сцена чуть выше экрана: сердце крупнее, край пола уходит вниз
     Ws = round(Hs * ph.width / ph.height)
     p = np.asarray(ph.resize((Ws, Hs), Image.LANCZOS)).astype(float)
@@ -266,26 +266,85 @@ def hero_wide(ph, bg, W, H):
     out[:, xs] = b[:, np.where(c >= Ws, 2 * Ws - c - 1, c)]
     m = min_cut(b[:, Ws - ov:], b[:, :ov], keep[:, Ws - ov:])[..., None]
     out[:, t0:x0 + Ws] = b[:, Ws - ov:] * (1 - m) + b[:, :ov] * m
-    hm = ndi.gaussian_filter(ndi.binary_dilation(heart, iterations=6).astype(float), 3)[..., None]
-    out[:, x0:x0 + Ws] = out[:, x0:x0 + Ws] * (1 - hm) + p * hm
     y0 = round(H * 20 / 1080)
+    print('  фото в широкой сцене: left %.3f%% top %.3f%% width %.3f%% height %.3f%%'
+          % (100 * x0 / W, -100 * y0 / H, 100 * Ws / W, 100 * Hs / H))
     return Image.fromarray(np.clip(out[y0:y0 + H], 0, 255).astype(np.uint8))
 
 
+def heart_mask(p, b):
+    """Сердце на фото: всё, чем фото отличается от того же кадра без сердца (самый большой кусок, без дыр)."""
+    heart = ndi.binary_fill_holes(ndi.binary_closing(np.abs(p - b).max(2) > 30, iterations=5))
+    lab, n = ndi.label(heart)
+    return lab == 1 + ndi.sum(heart, lab, range(1, n + 1)).argmax()
+
+
 def hero():
-    """Обложка: присланное фото (без тёмной каймы скриншота в 1 px) и широкие версии 1920 × 1080 и 2880 × 1620."""
+    """Обложка слоями: фон без сердца (узкий кадр – hero-bg.jpg, широкие 1920 × 1080 и 2880 × 1620),
+    сердце из присланного фото без надписей и надписи отдельно – на сайте сердце проявляется, имена пишутся.
+    Поверх фона слои дают ровно присланное фото. Тёмная кайма скриншота в 1 px срезана."""
     ph = Image.open(os.path.join(SRC, 'hero.jpg')).convert('RGB')
     box = (1, 0, ph.width - 1, ph.height - 1)
     bg = Image.open(os.path.join(SRC, 'bg-hero.png')).convert('RGB').resize(ph.size, Image.LANCZOS).crop(box)
     ph = ph.crop(box)
-    path = os.path.join(DST, 'hero.jpg')
-    ph.save(path, quality=86, optimize=True, progressive=True)
-    print(f'hero.jpg {ph.width}x{ph.height} {os.path.getsize(path) // 1024} KB')
+    p, b = np.asarray(ph).astype(float), np.asarray(bg).astype(float)
+    heart = heart_mask(p, b)
+    hm = ndi.gaussian_filter(ndi.binary_dilation(heart, iterations=6).astype(float), 3)
+    narrow = Image.fromarray(np.clip(p * (1 - hm[..., None]) + b * hm[..., None], 0, 255).astype(np.uint8))
     big = hero_wide(ph, bg, 2880, 1620)              # собирается один раз; 1920 × 1080 – уменьшенная копия
-    for name, im in (('hero-wide-2880', big), ('hero-wide', big.resize((1920, 1080), Image.LANCZOS))):
+    for name, im in (('hero-bg', narrow), ('hero-wide-2880', big), ('hero-wide', big.resize((1920, 1080), Image.LANCZOS))):
         path = os.path.join(DST, name + '.jpg')
         im.save(path, quality=84, optimize=True, progressive=True)
         print(f'{name}.jpg {im.width}x{im.height} {os.path.getsize(path) // 1024} KB')
+    hero_heart(p, heart, hm)
+
+
+def hero_heart(p, heart, hm):
+    """Сердце: бумага в середине очищена от имён и даты (гладкая заливка + зерно бумаги); имена в две строки
+    и дата – отдельными картинками, цвет восстановлен так, что поверх очищенной бумаги получается фото.
+    Печатает положение слоёв для style.css: сердце – в % кадра фото 1124 × 1999, надписи – в % сердца."""
+    H, W = heart.shape
+    lum = p.mean(2)
+    ys, xs = np.where(heart)
+    seed = (int(ys.mean()), int(xs.mean()))                  # середина сердца – чистая бумага
+    m = ndi.uniform_filter(lum, 7)
+    sd = np.sqrt(np.clip(ndi.uniform_filter(lum ** 2, 7) - m ** 2, 0, None))
+    lab, _ = ndi.label(ndi.binary_opening((sd < 3) & (np.abs(p - p[seed]).max(2) < 14), iterations=2))
+    paper = lab == lab[seed]
+    field = ndi.binary_fill_holes(ndi.binary_closing(paper, iterations=40))
+    field[:ys.min() + 230] = paper[:ys.min() + 230]          # у выемки сверху – только сама бумага
+    near = np.stack([ndi.median_filter(p[..., c], size=31) for c in range(3)], -1)
+    dark = near.mean(2) - lum > 10
+    ink = dark & ndi.binary_erosion(field, iterations=6)
+    for _ in range(10):                                      # кончики росчерков у самого края бумаги
+        ink |= ndi.binary_dilation(ink) & dark & ndi.binary_erosion(field, iterations=1)
+    hole = ndi.binary_dilation(ink, iterations=4)
+    clean = np.where(hole[..., None], smooth_fill(p, paper & ~hole, 4), p)
+    clean = grain_like(clean, hole, paper & ~hole)
+    y0, y1 = np.where(hm.max(1) > .01)[0][[0, -1]]
+    x0, x1 = np.where(hm.max(0) > .01)[0][[0, -1]]
+    y1, x1 = y1 + 1, x1 + 1
+    save_full('hero-heart', clean[y0:y1, x0:x1], hm[y0:y1, x0:x1], quality=88)
+    print('  .hero__heart: left %.3f%% top %.3f%% width %.3f%%' % (100 * x0 / W, 100 * y0 / H, 100 * (x1 - x0) / W))
+    # строки: «Фёдор &», «Ирина», дата – по середине каждого штриха
+    lab, n = ndi.label(ndi.binary_dilation(ink, iterations=2))
+    cy = np.array(ndi.center_of_mass(ink, lab, range(1, n + 1)))[:, 0]
+    rows = np.where(ink.any(1))[0]
+    date_top = rows[np.where(np.diff(rows) > 8)[0][-1] + 1]  # дата – отдельно, ниже пустой полосы
+    d = np.linalg.norm(p - clean, axis=2)
+    full = np.percentile(d[ndi.binary_erosion(ink, iterations=2)], 90)
+    for name, sel in (('hero-name-1', cy < (ys.min() + 410)), ('hero-name-2', (cy >= ys.min() + 410) & (cy < date_top)),
+                      ('hero-date', cy >= date_top)):
+        part = np.isin(lab, 1 + np.where(sel)[0]) & ink
+        area = ndi.binary_dilation(part, iterations=3)
+        a = np.clip(d / full, 0, 1) * area
+        a[a < .03] = 0
+        col = clean + (p - clean) / np.maximum(a, 1e-3)[..., None]
+        ly, lx = np.where(a > 0)
+        ly0, ly1, lx0, lx1 = ly.min(), ly.max() + 1, lx.min(), lx.max() + 1
+        save_full(name, col[ly0:ly1, lx0:lx1], a[ly0:ly1, lx0:lx1], quality=92)
+        print('  %s: left %.3f%% top %.3f%% width %.3f%%' % (name, 100 * (lx0 - x0) / (x1 - x0), 100 * (ly0 - y0) / (y1 - y0),
+                                                            100 * (lx1 - lx0) / (x1 - x0)))
 
 
 def erase_text(rgb, alpha, seed_box, boxes):
@@ -410,11 +469,22 @@ def cut_black(rgb):
 
 
 def cut_white(rgb, white=254.):
-    """Фон – белый вокруг рамки: прозрачный; край – доля отличия от белого у ближайшего пикселя изнутри."""
-    cand = (rgb.mean(2) >= 240) & (rgb.max(2) - rgb.min(2) <= 6)
+    """Фон – белый вокруг рамки: прозрачный, вместе с просветами внутри кружева (белые пятна в завитках и между
+    листьями: вокруг них – золото). Блики на жемчуге (вокруг – светлый перламутр) и тонкие блики по краям листьев
+    остаются. Край – доля отличия от белого у ближайшего пикселя изнутри."""
+    lum = rgb.mean(2)
+    cand = (lum >= 240) & (rgb.max(2) - rgb.min(2) <= 6)
     lab, n = ndi.label(cand)
+    idx = np.arange(1, n + 1)
     edge = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
-    fg = ~np.isin(lab, edge[edge > 0])
+    ring = ndi.grey_dilation(lab, size=5) * (lab == 0)        # соседи каждого пятна
+    dark_ring = ndi.mean(lum, ring, idx) < 220
+    thick = ndi.sum(ndi.binary_erosion(cand), lab, idx) >= 4   # не тонкая линия блика
+    hole = np.zeros(n + 1, bool)
+    hole[1:] = dark_ring & thick
+    hole[edge] = True
+    hole[0] = False
+    fg = ~hole[lab]
     return edge_alpha(rgb, fg, lambda P, F: (white - P).sum(2) / np.maximum((white - F).sum(2), 1), 0)
 
 

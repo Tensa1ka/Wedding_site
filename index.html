@@ -12,8 +12,9 @@
   <link rel="preload" href="assets/img/env-flap.webp" as="image">
   <link rel="preload" href="assets/img/env-seal.webp" as="image">
   <link rel="preload" href="assets/img/env-inside.webp" as="image">
-  <link rel="preload" href="assets/img/hero.jpg" as="image" media="(max-aspect-ratio: 7/10)">
-  <link rel="preload" as="image" imagesrcset="assets/img/hero-wide.jpg 1920w, assets/img/hero-wide-2880.jpg 2880w" imagesizes="100vw" media="(min-aspect-ratio: 7/10)">
+  <link rel="preload" href="assets/img/hero-bg.jpg" as="image" media="(max-aspect-ratio: 7/10)">
+  <link rel="preload" as="image" imagesrcset="assets/img/hero-wide.jpg 1920w, assets/img/hero-wide-2880.jpg 2880w" imagesizes="(min-aspect-ratio: 16/9) 100vw, 178vh" media="(min-aspect-ratio: 7/10)">
+  <link rel="preload" href="assets/img/hero-heart.webp" as="image">
   <link rel="preload" href="assets/fonts/cormorant-cyr.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/greatvibes-cyr.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
@@ -54,15 +55,26 @@
     </div>
   </div>
 
-  <!-- ============ ОБЛОЖКА: присланное фото сердца с фоном ============ -->
+  <!-- ============ ОБЛОЖКА: присланное фото слоями – фон, сердце, имена и дата ============ -->
   <!-- широкие экраны (1920 × 1080 и любые альбомные) – та же сцена, продолженная вправо и влево;
-       узкие – присланное фото целиком, по краям то же фото размытое -->
+       узкие – присланное фото целиком, по краям то же фото размытое. Сердце проявляется, как рамки ниже,
+       имена пишутся пером. Вместе слои дают ровно присланное фото. -->
   <header class="hero" id="top">
     <div class="hero__fill" aria-hidden="true"></div>
-    <picture class="hero__pic">
-      <source media="(min-aspect-ratio: 7/10)" srcset="assets/img/hero-wide.jpg 1920w, assets/img/hero-wide-2880.jpg 2880w" sizes="100vw" width="1920" height="1080">
-      <img class="hero__photo" src="assets/img/hero.jpg" alt="" width="1124" height="1999" decoding="async">
-    </picture>
+    <div class="hero__scene" aria-hidden="true">
+      <picture>
+        <source media="(min-aspect-ratio: 7/10)" srcset="assets/img/hero-wide.jpg 1920w, assets/img/hero-wide-2880.jpg 2880w" sizes="(min-aspect-ratio: 16/9) 100vw, 178vh" width="1920" height="1080">
+        <img class="hero__photo" src="assets/img/hero-bg.jpg" alt="" width="1124" height="1999" decoding="async">
+      </picture>
+      <div class="hero__frame">
+        <div class="hero__heart">
+          <img class="hero__heart-img" src="assets/img/hero-heart.webp" alt="" width="1060" height="954" decoding="async">
+          <img class="hero__name hero__name--1" src="assets/img/hero-name-1.webp" alt="" width="481" height="170" decoding="async">
+          <img class="hero__name hero__name--2" src="assets/img/hero-name-2.webp" alt="" width="360" height="161" decoding="async">
+          <img class="hero__date" src="assets/img/hero-date.webp" alt="" width="240" height="42" decoding="async">
+        </div>
+      </div>
+    </div>
     <h1 class="sr-only">Фёдор и Ирина – 21.07.2027</h1>
   </header>
 
