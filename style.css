@@ -135,6 +135,9 @@ h1, h2, h3, p { margin: 0; }
   position: absolute;
   inset: 0;
   background: url(assets/img/env-inside.webp) 0 0 / 100% 100%;
+  /* по силуэту конверта: подкладка не выглядывает из скруглённых углов и прозрачного края картинки */
+  -webkit-mask: url(assets/img/env-body.webp) 0 0 / 100% 100% no-repeat;
+  mask: url(assets/img/env-body.webp) 0 0 / 100% 100% no-repeat;
 }
 .env__inside::after {   /* глубина кармана: темнее у петли */
   content: "";
@@ -192,6 +195,7 @@ h1, h2, h3, p { margin: 0; }
   inset: 0;
   clip-path: polygon(0 100%, 100% 100%, 100% 91.23%, 48.42% 49.28%, 0 89.86%);
   background: url(assets/img/env-inside.webp) 0 0 / 100% 100%;
+  border-radius: 0 0 7% 7% / 0 0 3.9% 3.9%;   /* углы – как у конверта (после поворота они сверху) */
   transform: rotateX(180deg);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
@@ -223,6 +227,14 @@ h1, h2, h3, p { margin: 0; }
 }
 .seal__img { width: 100%; height: 100%; filter: drop-shadow(0 8px 10px rgba(60, 40, 5, .35)); }
 
+/* планшеты, ноутбуки, 1920 × 1080: конверт целиком, на фоне той же шторы, что у сайта;
+   чуть ниже середины – письмо выдвигается вверх и остаётся в экране. Телефоны – конверт на весь экран */
+@media (min-aspect-ratio: 2 / 3) {
+  .js .intro { background: #efe9df url(assets/img/bg-sections.webp) 50% 0 / cover no-repeat; }
+  .env__card { --env-h: 78svh; top: 56%; width: calc(var(--env-h) * .5609); }
+  .env__body { filter: drop-shadow(0 3svh 4svh rgba(60, 48, 18, .28)); }
+}
+
 /* появление: только прозрачность – без масштаба и размытия */
 .js .intro .env__card { opacity: 0; }
 .js .intro .seal { opacity: 0; }
@@ -230,16 +242,15 @@ h1, h2, h3, p { margin: 0; }
 .intro.is-ready .seal { opacity: 1; transition: opacity .7s ease .5s, transform .16s var(--ease-out); }
 
 /* =========================================================
-   Обложка: присланное фото (сердце с фоном).
-   Альбомные экраны (1920 × 1080 и любые от 7:10) – та же сцена, продолженная вправо и влево,
-   на весь экран. Узкие – фото целиком, по краям то же фото, размытое: сердце не обрезается.
-   Слои лежат в одной ячейке сетки.
+   Обложка: присланное фото слоями – фон без сердца, сердце, имена и дата.
+   Сцена – кадр картинки фона, растянутый как cover (широкие экраны: сцена 1920 × 1080, продолженная вправо и влево)
+   или целиком по высоте (узкие: фото 1124 × 1999, по краям то же фото, размытое).
+   .hero__frame – место присланного фото в сцене; сердце и надписи – в процентах от него.
    ========================================================= */
 .hero {
   position: relative;
   display: grid;
   grid-template: minmax(0, 1fr) / minmax(0, 1fr);   /* одна ячейка ровно в размер экрана */
-  place-items: center;
   block-size: 100vh;
   block-size: 100svh;
   overflow: hidden;
@@ -249,33 +260,55 @@ h1, h2, h3, p { margin: 0; }
   -webkit-mask-image: linear-gradient(#000 94%, transparent);
   mask-image: linear-gradient(#000 94%, transparent);
 }
-.hero > *, .hero__pic > * { grid-area: 1 / 1; }
-.hero__pic { display: contents; }
-.hero__fill { inline-size: 100%; block-size: 100%; filter: blur(28px); scale: 1.15; }
-.hero__photo { inline-size: min(100%, 100vh * 1124 / 1999); }
-@supports (height: 100svh) { .hero__photo { inline-size: min(100%, 100svh * 1124 / 1999); } }
-/* размытое фото по краям грузится только на узких экранах */
+.hero__fill { grid-area: 1 / 1; filter: blur(28px); scale: 1.15; }
+.hero__scene {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: min(100vw, 100vh * 1124 / 1999);
+  aspect-ratio: 1124 / 1999;
+  translate: -50% -50%;
+}
+@supports (height: 100svh) { .hero__scene { inline-size: min(100vw, 100svh * 1124 / 1999); } }
+.hero__photo { inline-size: 100%; block-size: 100%; max-inline-size: none; }
+.hero__frame { position: absolute; inset: 0; }
+.hero__heart { position: absolute; inset-inline-start: 2.669%; inset-block-start: 20.31%; inline-size: 94.306%; }
+.hero__heart-img { inline-size: 100%; }
+.hero__name, .hero__date { position: absolute; max-inline-size: none; }
+.hero__name--1 { inset-inline-start: 27.925%; inset-block-start: 29.455%; inline-size: 45.377%; }
+.hero__name--2 { inset-inline-start: 38.208%; inset-block-start: 44.025%; inline-size: 33.962%; }
+.hero__date { inset-inline-start: 38.585%; inset-block-start: 63.103%; inline-size: 22.642%; }
+/* размытое фото по краям – только на узких экранах */
 @media (max-aspect-ratio: 7 / 10) {
-  .hero__fill { background: url(assets/img/hero.jpg) 50% 50% / cover; }
+  .hero__fill { background: url(assets/img/hero-bg.jpg) 50% 50% / cover; }
 }
 /* стык фото с размытыми полями – мягкий */
-@media (min-aspect-ratio: 1124 / 1999) {
-  .hero__photo { -webkit-mask-image: linear-gradient(90deg, transparent, #000 2.5%, #000 97.5%, transparent); mask-image: linear-gradient(90deg, transparent, #000 2.5%, #000 97.5%, transparent); }
+@media (min-aspect-ratio: 1124 / 1999) and (max-aspect-ratio: 7 / 10) {
+  .hero__scene { -webkit-mask-image: linear-gradient(90deg, transparent, #000 2.5%, #000 97.5%, transparent); mask-image: linear-gradient(90deg, transparent, #000 2.5%, #000 97.5%, transparent); }
 }
 @media (max-aspect-ratio: 1124 / 1999) {
-  .hero__photo { -webkit-mask-image: linear-gradient(transparent, #000 2%, #000 98%, transparent); mask-image: linear-gradient(transparent, #000 2%, #000 98%, transparent); }
+  .hero__scene { -webkit-mask-image: linear-gradient(transparent, #000 2%, #000 98%, transparent); mask-image: linear-gradient(transparent, #000 2%, #000 98%, transparent); }
 }
-/* широкие экраны: сцена 1920 × 1080 на весь экран, сердце по центру */
+/* широкие экраны: сцена 1920 × 1080 на весь экран (cover), фото – в её середине */
 @media (min-aspect-ratio: 7 / 10) {
   .hero__fill { display: none; }
-  .hero__photo { inline-size: 100%; block-size: 100%; max-inline-size: none; object-fit: cover; -webkit-mask-image: none; mask-image: none; }
+  .hero__scene { inline-size: max(100vw, 100vh * 1920 / 1080); aspect-ratio: 1920 / 1080; }
+  .hero__frame { inset: auto; inset-inline-start: 31.701%; inset-block-start: -1.852%; inline-size: 36.597%; block-size: 115.741%; }
 }
+@supports (height: 100svh) { @media (min-aspect-ratio: 7 / 10) { .hero__scene { inline-size: max(100vw, 100svh * 1920 / 1080); } } }
 
-/* после открытия конверта фото проявляется */
+/* после открытия конверта: фон проявляется, сердце поднимается, как рамки ниже, имена пишутся пером, затем дата */
 .js .hero__fill, .js .hero__photo { opacity: 0; }
 .js .hero__photo { scale: 1.03; }
 .is-opened .hero__fill { opacity: 1; transition: opacity 1.2s ease .1s; }
 .is-opened .hero__photo { opacity: 1; scale: 1; transition: opacity 1.4s ease .25s, scale 2.6s var(--ease-out-soft) .25s; }
+.js .hero__heart { opacity: 0; translate: 0 30px; scale: .94; }
+.is-opened .hero__heart { opacity: 1; translate: 0 0; scale: 1; transition: opacity 1.3s ease .5s, translate 1.8s var(--ease-out-soft) .5s, scale 1.8s var(--ease-out-soft) .5s; }
+.js .hero__name { clip-path: inset(-35% 104% -35% -8%); opacity: .2; }
+.is-opened .hero__name { clip-path: inset(-35% -8% -35% -8%); opacity: 1; transition: clip-path 1.6s var(--ease-write) 1.3s, opacity .5s ease 1.3s; }
+.is-opened .hero__name--2 { transition-delay: 2.3s; }
+.js .hero__date { opacity: 0; translate: 0 22px; filter: blur(5px); }
+.is-opened .hero__date { opacity: 1; translate: 0 0; filter: blur(0); transition: opacity 1s ease 3.3s, translate 1.2s var(--ease-out) 3.3s, filter 1s var(--ease-out) 3.3s; }
 
 /* =========================================================
    Секции: одна колонка по центру на любом экране
@@ -293,10 +326,14 @@ main {
 .sec--place { padding-block-end: clamp(48px, 9vw, 120px); }
 
 /* ---------- Рамки из присланных картинок: картинка – фон, текст – на сайте ---------- */
-/* «Приглашение», «Адрес» и «Дресс-код» крупнее: колонка шире, чем у остальных секций */
-.sec--invite .col, .sec--place .col, .sec--panel .col { --col: 740px; }
+/* рамки крупнее: колонка шире, чем у финала */
+.sec--invite .col, .sec--place .col, .sec--program .col, .sec--panel .col { --col: 740px; }
 .oval, .frame { position: relative; inline-size: 96cqi; margin-inline: auto; container-type: inline-size; }
 .oval__img, .frame__img { inline-size: 100%; filter: drop-shadow(0 22px 30px rgba(60, 62, 40, .16)); }
+
+/* «Программа»: в кадре вокруг рамы больше пустого поля – картинка шире, чтобы золотая рама была
+   той же ширины, что у «Приглашения» и «Дресс-кода» (≈ 83 % против 85–87 %) */
+@container (min-width: 600px) { .frame { inline-size: 100cqi; } }
 
 /* Широкие экраны (1920 × 1080, ноутбуки): секция не ниже экрана, рамка по центру */
 @media (min-aspect-ratio: 1 / 1) and (min-height: 600px) {
@@ -307,7 +344,6 @@ main {
     padding-block: 3.5vh;
     padding-block: 3.5svh;
   }
-  .frame { inline-size: min(96cqi, max(420px, 93svh * 1024 / 1536)); }
 }
 
 /* ---------- Рамки, растущие под текст: «Приглашение» и «Дресс-код» ----------
@@ -809,10 +845,11 @@ main {
   .rsvp-done__heart, .ask[open] { animation: none !important; }
   [data-bloom].is-settled { animation: none !important; opacity: 1; }
   .js [data-reveal], .js [data-bloom], .js .prog li > *, .js .countdown, .js .countdown div, .js .countdown em, .js .hero__photo,
+  .js .hero__heart, .js .hero__date,
   .js .divider b, .js .cal > *, .js .cal__day--heart::before {
     translate: none !important; rotate: none !important; scale: none !important; filter: none !important;
   }
-  .js .divider::before, .js .divider::after, .js .rule::before { clip-path: none !important; }
+  .js .divider::before, .js .divider::after, .js .rule::before, .js .hero__name { clip-path: none !important; }
   .js [data-write] > .ink { clip-path: none !important; opacity: 0; }
   .js [data-write].is-in > .ink { opacity: 1; transition: opacity .6s ease; }
   .hero, .hero * { transition-duration: .6s !important; transition-delay: 0s !important; }
