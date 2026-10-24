@@ -99,11 +99,12 @@ h1, h2, h3, p { margin: 0; }
 .title + .text { margin-top: .85em; }
 
 /* =========================================================
-   Лицо открытки: конверт на весь экран
-   Клапан на петле у верхнего края поднимается к зрителю и откидывается назад вместе с печатью;
-   внутри видна подкладка и письмо, которое выдвигается из кармана. Затем конверт растворяется.
+   Лицо открытки: конверт с восковой печатью.
+   По нажатию печать трескается и распадается на две половинки; камера отъезжает, чтобы открытый клапан
+   уместился в экран; клапан откидывается на петле у верхнего края; письмо выезжает из кармана перед клапаном,
+   затем конверт уходит вниз, письмо выходит в центр и растворяется в обложку. Движение – в script.js.
    ========================================================= */
-.intro { display: none; padding: 0; background: #efe4d3; }
+.intro { display: none; padding: 0; background: #efe9df url(assets/img/bg-sections.webp) 50% 0 / cover no-repeat; }
 .js .intro {
   position: fixed;
   inset: 0;
@@ -115,7 +116,7 @@ h1, h2, h3, p { margin: 0; }
   -webkit-tap-highlight-color: transparent;
 }
 .envelope { position: absolute; inset: 0; }
-/* конверт всегда закрывает экран целиком (как cover); +6 % – скруглённые углы картинки уходят за край */
+/* телефоны: конверт закрывает экран целиком (как cover); +6 % – скруглённые углы картинки уходят за край */
 .env__card {
   --env-h: calc(max(100svh, 100vw / .5609) * 1.06);
   position: absolute;
@@ -127,30 +128,44 @@ h1, h2, h3, p { margin: 0; }
   perspective: calc(var(--env-h) * 2.4);
   perspective-origin: 50% 30%;
 }
+/* слои по порядку: корпус, подкладка кармана, письмо, передняя стенка кармана, клапан
+   (когда клапан откинут дальше ребра, он уходит за письмо – класс .is-flipped) */
 .env__body, .env__flap-front, .env__pocket img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; }
+.env__inside { z-index: 1; }
+.env__letter { z-index: 3; }
+.env__pocket { z-index: 4; }
+.env__flap { z-index: 5; }
+.intro.is-flipped .env__flap { z-index: 2; }
 
+/* подкладка: светлая бумага того же оттенка, что конверт */
+.env__inside, .env__flap-back::before {
+  background:
+    linear-gradient(rgba(252, 248, 240, .55), rgba(252, 248, 240, .55)),
+    url(assets/img/env-inside.webp) 0 0 / 100% 100%;
+}
 /* форма выреза под клапаном */
-.env__inside, .env__cast, .env__letter { clip-path: polygon(0 0, 100% 0, 100% 8.77%, 48.42% 50.72%, 0 10.14%); }
+.env__inside, .env__cast { clip-path: polygon(0 0, 100% 0, 100% 8.77%, 48.42% 50.72%, 0 10.14%); }
 .env__inside {
   position: absolute;
   inset: 0;
-  background: url(assets/img/env-inside.webp) 0 0 / 100% 100%;
   /* по силуэту конверта: подкладка не выглядывает из скруглённых углов и прозрачного края картинки */
   -webkit-mask: url(assets/img/env-body.webp) 0 0 / 100% 100% no-repeat;
   mask: url(assets/img/env-body.webp) 0 0 / 100% 100% no-repeat;
 }
-.env__inside::after {   /* глубина кармана: темнее у петли */
+.env__inside::after {   /* глубина кармана: чуть темнее у петли */
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(24, 22, 6, .5), rgba(24, 22, 6, .2) 22%, rgba(24, 22, 6, 0) 48%);
+  background: linear-gradient(180deg, rgba(70, 52, 22, .22), rgba(70, 52, 22, .06) 26%, rgba(70, 52, 22, 0) 44%);
 }
 .env__cast {            /* тень от клапана – уходит, пока он поднимается */
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(18, 14, 2, .7), rgba(18, 14, 2, .35) 40%, rgba(18, 14, 2, .2));
+  background: linear-gradient(180deg, rgba(40, 30, 8, .4), rgba(40, 30, 8, .18) 45%, rgba(40, 30, 8, .1));
 }
-.env__letter { position: absolute; inset: 0; clip-path: polygon(0 -80%, 100% -80%, 100% 8.77%, 48.42% 50.72%, 0 10.14%); container-type: inline-size; }
+
+/* письмо: видно в вырезе, выезжает вверх перед откинутым клапаном */
+.env__letter { position: absolute; inset: 0; clip-path: polygon(0 -200%, 100% -200%, 100% 8.77%, 48.42% 50.72%, 0 10.14%); container-type: inline-size; }
 .env__note {
   position: absolute;
   left: 8%;
@@ -160,17 +175,35 @@ h1, h2, h3, p { margin: 0; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 8cqi;
+  justify-content: center;
+  padding-bottom: 6cqi;
   border-radius: .8cqi;
   background: linear-gradient(180deg, #fdfbf6, #f4eee1);
-  box-shadow: 0 -.6cqi 2.4cqi rgba(30, 24, 6, .3);
+  box-shadow: 0 -.6cqi 2.4cqi rgba(30, 24, 6, .22), 0 3cqi 6cqi rgba(60, 46, 16, .18);
 }
 .env__note::before { content: ""; position: absolute; inset: 2.6cqi; border: 1px solid rgba(192, 149, 83, .75); border-radius: .4cqi; }
-.env__note-kicker { font-weight: 500; font-size: 3.4cqi; letter-spacing: .2em; text-transform: uppercase; color: var(--olive-soft); }
-.env__note-names { margin-top: 2.6cqi; font-family: var(--script); font-size: 9.6cqi; line-height: 1.05; color: var(--olive); }
-.env__note-date { margin-top: 2.2cqi; font-weight: 500; font-size: 3.8cqi; letter-spacing: .08em; color: var(--olive-ink); }
+.env__note-kicker { font-weight: 500; font-size: 3.4cqi; letter-spacing: .24em; text-transform: uppercase; color: var(--olive-soft); }
+.env__note-names { margin-top: 2.4cqi; font-family: var(--script); font-size: 10.4cqi; line-height: 1.05; color: var(--olive); white-space: nowrap; }
+.env__note-rule {       /* золотые линии со звёздочкой – как разделители на рамках */
+  position: relative;
+  inline-size: 30cqi;
+  block-size: 3.4cqi;
+  margin-top: 2cqi;
+  background: url(assets/img/orn-sparkle.webp) 50% 50% / auto 100% no-repeat;
+}
+.env__note-rule::before, .env__note-rule::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 50%;
+  inline-size: calc(50% - 2.6cqi);
+  block-size: max(1px, .3cqi);
+}
+.env__note-rule::before { inset-inline-start: 0; background: linear-gradient(90deg, rgba(199, 155, 69, 0), var(--gold)); }
+.env__note-rule::after { inset-inline-end: 0; background: linear-gradient(270deg, rgba(199, 155, 69, 0), var(--gold)); }
+.env__note-date { margin-top: 1.6cqi; font-weight: 500; font-size: 4.2cqi; letter-spacing: .12em; color: var(--olive-ink); }
+.env__note-lily { inline-size: 13cqi; margin-top: 4cqi; }
 /* передняя стенка кармана отбрасывает тень на письмо */
-.env__pocket { position: absolute; inset: 0; filter: drop-shadow(0 -3px 6px rgba(40, 30, 8, .28)); }
+.env__pocket { position: absolute; inset: 0; filter: drop-shadow(0 -3px 6px rgba(40, 30, 8, .22)); }
 .env__pocket img { clip-path: polygon(0 10.14%, 48.42% 50.72%, 100% 8.77%, 100% 100%, 0 100%); }
 
 /* клапан: две стороны в 3D, поворот вокруг верхнего края */
@@ -185,23 +218,26 @@ h1, h2, h3, p { margin: 0; }
 .env__shade {           /* лицо клапана темнеет, когда встаёт ребром к свету */
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(70, 52, 24, .1), rgba(70, 52, 24, .45));
+  background: linear-gradient(180deg, rgba(70, 52, 24, .08), rgba(70, 52, 24, .38));
   -webkit-mask: url(assets/img/env-flap.webp) 0 0 / 100% 100% no-repeat;
   mask: url(assets/img/env-flap.webp) 0 0 / 100% 100% no-repeat;
   opacity: 0;
 }
-.env__flap-back {       /* изнанка клапана – та же подкладка, зеркально: после поворота совпадёт с формой */
+/* изнанка клапана: подкладка с золотой кромкой по краю; зеркально – после поворота совпадёт с формой */
+.env__flap-back {
   position: absolute;
   inset: 0;
   clip-path: polygon(0 100%, 100% 100%, 100% 91.23%, 48.42% 49.28%, 0 89.86%);
-  background: url(assets/img/env-inside.webp) 0 0 / 100% 100%;
+  background: linear-gradient(100deg, #a9782d, #e3c487 32%, #c39a4f 58%, #a3732a);
   border-radius: 0 0 7% 7% / 0 0 3.9% 3.9%;   /* углы – как у конверта (после поворота они сверху) */
   transform: rotateX(180deg);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
-.env__back-shade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(18, 14, 2, .55), rgba(18, 14, 2, .15) 60%); }
+.env__flap-back::before { content: ""; position: absolute; inset: 0; clip-path: polygon(0 100%, 100% 100%, 100% 92.1%, 48.42% 50.3%, 0 90.7%); }
+.env__back-shade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(60, 44, 14, .32), rgba(60, 44, 14, .06) 60%); }
 
+/* печать */
 .seal {
   position: absolute;
   left: 48.42%;
@@ -225,12 +261,18 @@ h1, h2, h3, p { margin: 0; }
   .intro:hover .seal { transform: scale(1.03); }
   .seal:active { transform: scale(.96); transition-duration: .16s; }
 }
-.seal__img { width: 100%; height: 100%; filter: drop-shadow(0 8px 10px rgba(60, 40, 5, .35)); }
+.seal__img, .seal__half img { width: 100%; height: 100%; max-width: none; filter: drop-shadow(0 8px 10px rgba(60, 40, 5, .35)); }
+.env__shards { position: absolute; z-index: 6; left: 48.42%; top: 47.2%; width: 27%; aspect-ratio: 560 / 588; translate: -50% -50%; pointer-events: none; }
+.seal__half { position: absolute; inset: 0; opacity: 0; }
+.seal__half img { position: absolute; inset: 0; }
+/* половинки – по линии трещины */
+.seal__half--l { clip-path: polygon(-10% -10%, 52% -10%, 52% 3%, 47% 20%, 55% 35%, 46% 51%, 54% 66%, 47% 82%, 51% 97%, 51% 110%, -10% 110%); }
+.seal__half--r { clip-path: polygon(52% -10%, 110% -10%, 110% 110%, 51% 110%, 51% 97%, 47% 82%, 54% 66%, 46% 51%, 55% 35%, 47% 20%, 52% 3%); }
+.seal__crack { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; overflow: visible; pointer-events: none; }
+.seal__crack path { fill: none; stroke: rgba(74, 44, 6, .75); stroke-width: 1.6; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; vector-effect: non-scaling-stroke; }
 
-/* планшеты, ноутбуки, 1920 × 1080: конверт целиком, на фоне той же шторы, что у сайта;
-   чуть ниже середины – письмо выдвигается вверх и остаётся в экране. Телефоны – конверт на весь экран */
+/* планшеты, ноутбуки, 1920 × 1080: конверт целиком, на фоне той же шторы, что у сайта. Телефоны – на весь экран */
 @media (min-aspect-ratio: 2 / 3) {
-  .js .intro { background: #efe9df url(assets/img/bg-sections.webp) 50% 0 / cover no-repeat; }
   .env__card { --env-h: 78svh; top: 56%; width: calc(var(--env-h) * .5609); }
   .env__body { filter: drop-shadow(0 3svh 4svh rgba(60, 48, 18, .28)); }
 }

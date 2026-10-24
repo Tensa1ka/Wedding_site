@@ -37,7 +37,9 @@
           <div class="env__note">
             <span class="env__note-kicker">Wedding Day</span>
             <span class="env__note-names">Фёдор &amp; Ирина</span>
+            <i class="env__note-rule"></i>
             <span class="env__note-date">21.07.2027</span>
+            <img class="env__note-lily" src="assets/img/orn-lily.webp" alt="" width="141" height="114">
           </div>
         </div>
         <!-- передняя стенка кармана поверх письма -->
@@ -47,9 +49,16 @@
           <img class="env__flap-front" src="assets/img/env-flap.webp" alt="" width="857" height="1528">
           <span class="env__shade" aria-hidden="true"></span>
           <div class="env__flap-back" aria-hidden="true"><span class="env__back-shade"></span></div>
+          <!-- печать: по нажатию трескается и распадается на две половинки (они – отдельным слоем ниже) -->
           <button class="seal" id="intro-open" type="button" aria-label="Открыть приглашение">
             <img class="seal__img" src="assets/img/env-seal.webp" alt="" width="560" height="588">
+            <svg class="seal__crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M52 3 L47 20 L55 35 L46 51 L54 66 L47 82 L51 97"/></svg>
           </button>
+        </div>
+        <!-- половинки расколотой печати: над конвертом, падают вниз, а клапан уходит вверх -->
+        <div class="env__shards" aria-hidden="true">
+          <span class="seal__half seal__half--l"><img src="assets/img/env-seal.webp" alt="" width="560" height="588"></span>
+          <span class="seal__half seal__half--r"><img src="assets/img/env-seal.webp" alt="" width="560" height="588"></span>
         </div>
       </div>
     </div>
