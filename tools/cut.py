@@ -421,11 +421,11 @@ def ornament(name, rgb, clean, box, clear=None):
 
 
 # ---------- пятый набор: присланные рамки без текста (текст – на сайте), орнаменты – с образцов ----------
-# frame-1.webp, frame-2.webp – слои SVG «Рамка 1» и «Рамка 2», сведённые без изменений;
+# frame-1.webp – слои SVG «Рамка 1», сведённые без изменений; frame-dress.jpg – присланная рамка «Дресс-код»;
 # frame-pearl.webp – «Оригинальная жемчужно-золотая рамка» из Figma;
 # sample-*.jpg / sample-place.webp – образцы из архива «образец страниц сайта» (с них – лилия и линии «Адреса»).
 # На сайте прямоугольные рамки тянутся по высоте под текст: растягивается полоса с ровными планками
-# (строки 1020–1110 у «Рамки 1», 962–967 у «Рамки 2» – в кадре сохранённой картинки: только бумага и планки).
+# (у «Рамки 1» – строки 1020–1110; у «Дресс-кода» – своя полоса у левой и правой половины, см. frame_dress).
 
 def smooth_fill(rgb, known, sigma):
     """Плавная заливка по известным пикселям (взвешенное гауссово среднее);
@@ -453,19 +453,22 @@ def paper_tone(img, region, k=4, size=9, tol=8):
     return smooth_fill(img, known, 6)
 
 
-def cut_black(rgb):
+def cut_black(rgb, band=1):
     """Фон – чёрный: прозрачный, вместе с закрытыми просветами и тёмной каймой у края;
-    край силуэта – доля яркости от ближайшего пикселя изнутри (сглаживание без чёрного ореола)."""
+    край силуэта – доля яркости от ближайшего пикселя изнутри (сглаживание без чёрного ореола).
+    band > 1 – ещё и тусклое серое свечение на band пикселей от края (у мелких белых цветов) становится
+    полупрозрачным, а не серым; золото, листья и яркие цветы при этом не трогаются."""
     mx = rgb.max(2)
     dark = mx <= 10
     lab, n = ndi.label(dark)
     keep = np.zeros(n + 1, bool)
     keep[1:] = ndi.sum(dark, lab, range(1, n + 1)) >= 6
     bg = keep[lab]
+    glow = (mx - rgb.min(2) < 18) & (rgb.mean(2) < 150) if band > 1 else np.ones(mx.shape, bool)
     for _ in range(3):
-        bg |= ndi.binary_dilation(bg) & (mx < 45)
+        bg |= ndi.binary_dilation(bg) & (mx < 45) & glow
     fg = ndi.binary_opening(~bg, iterations=1)                 # без одиночных крошек
-    return edge_alpha(rgb, fg, lambda P, F: P.sum(2) / np.maximum(F.sum(2), 1), .4)
+    return edge_alpha(rgb, fg, lambda P, F: P.sum(2) / np.maximum(F.sum(2), 1), .4, band, glow)
 
 
 def cut_white(rgb, white=254.):
@@ -488,8 +491,10 @@ def cut_white(rgb, white=254.):
     return edge_alpha(rgb, fg, lambda P, F: (white - P).sum(2) / np.maximum((white - F).sum(2), 1), 0)
 
 
-def edge_alpha(rgb, fg, share, blur):
+def edge_alpha(rgb, fg, share, blur, band=1, soft=None):
     core = ndi.binary_erosion(fg, iterations=1)
+    if band > 1:                                               # широкий край – только у пикселей soft
+        core &= ndi.binary_erosion(fg, iterations=band) | ~soft
     _, (iy, ix) = ndi.distance_transform_edt(~core, return_indices=True)
     F = rgb[iy, ix]
     alpha = np.where(core, 1.0, np.where(fg, np.clip(share(rgb, F), 0, 1), 0.0))
@@ -516,11 +521,34 @@ def frame_invite():
     ornament('orn-heart', rgb, clean, (1292, 1378, 388, 492))
 
 
+# поле для текста у прежней рамки «Дресс-код» (в кадре 869 × 1775) и у присланной новой (frame-dress.jpg, 884 × 1780):
+# новая рамка приводится к прежнему полю, поэтому раскладка текста в style.css не меняется
+DRESS_FIELD_OLD = (107, 251, 782, 1654)
+DRESS_FIELD_NEW = (110, 238, 794, 1635)
+
+
 def frame_dress():
-    """«Рамка 2» как есть; лилия у «оставить для невесты» – с образца, отдельной картинкой."""
-    a = load_rgba('frame-2.webp')
-    rgb, alpha = a[..., :3], np.clip(a[..., 3] / 252, 0, 1)
-    save('frame-dress', rgb, alpha, quality=88)
+    """Рамка «Дресс-код» – присланная frame-dress.jpg: чёрный фон – прозрачный, рамка совмещена с полем прежней
+    (масштаб по ширине −1,3 %, по высоте +0,4 % – на глаз незаметно). Лилия у «оставить для невесты» – с образца.
+    Ровной полосы на всю ширину у рамки нет (левый букет ниже, чем начинается правый): печатает полосы
+    для растяжения левой и правой половин – --cut-* в style.css."""
+    rgb, alpha = cut_black(load('frame-dress.jpg'), band=4)
+    (ox0, oy0, ox1, oy1), (nx0, ny0, nx1, ny1) = DRESS_FIELD_OLD, DRESS_FIELD_NEW
+    sx, sy = (ox1 - ox0) / (nx1 - nx0), (oy1 - oy0) / (ny1 - ny0)
+    tx, ty = ox0 - nx0 * sx, oy0 - ny0 * sy
+    H = max(1775, int(np.ceil(np.where(alpha.max(1) > .03)[0][-1] * sy + ty)) + 3)
+    im = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), alpha * 255]).round().astype(np.uint8), 'RGBA').convert('RGBa')
+    im = im.transform((869, H), Image.AFFINE, (1 / sx, 0, -tx / sx, 0, 1 / sy, -ty / sy), Image.BICUBIC).convert('RGBA')
+    a = np.asarray(im).astype(float)
+    rgb, alpha = a[..., :3], a[..., 3] / 255
+    save_full('frame-dress', rgb, alpha, quality=88)
+    flat = np.dstack([rgb * alpha[..., None], alpha[..., None] * 255])
+    busy = (np.abs(np.diff(flat, axis=0)).max(2) > 10)
+    for side, cols in (('левая', slice(0, 869 // 2)), ('правая', slice(869 // 2, 869))):
+        ys = np.where(busy[300:1650, cols].sum(1) <= 2)[0] + 300
+        runs = np.split(ys, np.where(np.diff(ys) > 1)[0] + 1)
+        r = max(runs, key=len)
+        print(f'  {side} половина тянется: строки {r[0] + 2}–{r[-1] - 2} (--cut-t {r[0] + 2}, --cut-b {H - r[-1] + 2}), кадр {H}')
     y0, y1, x0, x1 = 812, 930, 650, 798
     s = load('sample-dress.jpg')[y0:y1, x0:x1]
     paper = np.median(s.reshape(-1, 3), 0)

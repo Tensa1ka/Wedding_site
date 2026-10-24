@@ -42,13 +42,16 @@
   }
 
   /* =========================================================
-     Лицо открытки: конверт на весь экран (около 5 секунд)
-     Печать остаётся на клапане целой; клапан откидывается на петле у верхнего края,
-     части конверта не расходятся – затем весь конверт плавно уезжает вниз.
+     Лицо открытки: открытие конверта (около 5 секунд)
+     0–1,2 с   печать вдавливается, трескается и распадается на две половинки;
+     0,25–1,5  камера отъезжает: конверт меньше и ниже, чтобы открытый клапан и письмо уместились в экран;
+     0,55–1,75 клапан откидывается на петле, за ребром уходит за письмо;
+     1,6–2,7   письмо выезжает из кармана перед клапаном;
+     2,85–3,85 конверт уходит вниз, письмо выходит в центр экрана и приближается;
+     4,3–5,2   письмо растворяется – под ним обложка, на которой поднимается сердце и пишутся имена.
      ========================================================= */
   var intro = document.getElementById("intro");
   var openBtn = document.getElementById("intro-open");
-  var envelope = intro && intro.querySelector(".envelope");
   var opened = false;
 
   function reveal() {
@@ -72,34 +75,79 @@
     }
 
     var q = function (s) { return intro.querySelector(s); };
-    var lift = "cubic-bezier(.5,0,.22,1)";
+    var card = q(".env__card"), letter = q(".env__letter"), note = q(".env__note");
+    var out = "cubic-bezier(.22,1,.36,1)", inOut = "cubic-bezier(.65,0,.35,1)";
+    var run = function (sel, frames, opts) {
+      var el = typeof sel === "string" ? q(sel) : sel;
+      opts.fill = "forwards";
+      return el.animate(frames, opts);
+    };
 
-    // 0–0,32 с: печать отзывается на нажатие
-    openBtn.querySelector("img").animate(
-      [{ transform: "scale(1)" }, { transform: "scale(.95)", offset: .4 }, { transform: "scale(1)" }],
-      { duration: 320, easing: "cubic-bezier(.23,1,.32,1)" }
-    );
-    // 0,25–2 с: клапан вместе с печатью отклеивается, поднимается к зрителю и откидывается назад на петле
-    q(".env__flap").animate(
-      [{ transform: "rotateX(0deg)" }, { transform: "rotateX(7deg)", offset: .12 }, { transform: "rotateX(180deg)" }],
-      { duration: 1750, delay: 250, easing: lift, fill: "forwards" }
-    );
-    q(".env__shade").animate([{ opacity: 0 }, { opacity: .2, offset: .12 }, { opacity: 1, offset: .5 }, { opacity: 1 }],
-      { duration: 1750, delay: 250, easing: lift, fill: "forwards" });
-    q(".env__back-shade").animate([{ opacity: 1 }, { opacity: 1, offset: .5 }, { opacity: .25 }],
-      { duration: 1750, delay: 250, easing: lift, fill: "forwards" });
-    // тень от клапана внутри конверта уходит, подкладка открывается
-    q(".env__cast").animate([{ opacity: 1 }, { opacity: 0 }],
-      { duration: 1400, delay: 350, easing: "ease-out", fill: "forwards" });
-    // 1,5–2,8 с: письмо выдвигается из кармана
-    q(".env__note").animate([{ transform: "translateY(0)" }, { transform: "translateY(-44%)" }],
-      { duration: 1300, delay: 1500, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" });
-    // 2,6–3,5 с: конверт растворяется на месте
-    intro.animate([{ opacity: 1 }, { opacity: 0 }],
-      { duration: 900, delay: 2600, easing: "ease-in-out", fill: "forwards" });
+    // камера: открытый клапан выше конверта на половину его высоты – вся сцена должна уместиться в экран
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var r = card.getBoundingClientRect();
+    var k = Math.min(1, .9 * vh / (1.507 * r.height), .92 * vw / r.width);
+    var dy = vh / 2 + .2535 * r.height * k - (r.top + r.height / 2);
+    run(card, [{ transform: "none" }, { transform: "translateY(" + dy.toFixed(1) + "px) scale(" + k.toFixed(4) + ")" }],
+      { duration: 1250, delay: 250, easing: inOut });
 
-    setTimeout(reveal, 2700);
-    setTimeout(function () { intro.remove(); }, 3600);
+    // печать: нажатие, трещина, половинки отпадают
+    run(".seal__img", [{ transform: "scale(1)" }, { transform: "scale(.93)", offset: .45 }, { transform: "scale(.97)" }],
+      { duration: 320, easing: out });
+    run(".seal__crack path", [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 200, delay: 170, easing: "ease-in" });
+    run(".seal__img", [{ opacity: 1 }, { opacity: 0 }], { duration: 1, delay: 380 });
+    run(".seal__crack", [{ opacity: 1 }, { opacity: 0 }], { duration: 1, delay: 380 });
+    var fall = { duration: 900, delay: 380, easing: "cubic-bezier(.5,0,.75,.4)" };
+    run(".seal__half--l", [
+      { opacity: 1, transform: "translate(0, 0) rotate(0deg)" },
+      { opacity: 1, transform: "translate(-7%, 5%) rotate(-8deg)", offset: .28 },
+      { opacity: 0, transform: "translate(-24%, 120%) rotate(-34deg) scale(.96)" }
+    ], fall);
+    run(".seal__half--r", [
+      { opacity: 1, transform: "translate(0, 0) rotate(0deg)" },
+      { opacity: 1, transform: "translate(7%, 6%) rotate(7deg)", offset: .28 },
+      { opacity: 0, transform: "translate(22%, 130%) rotate(28deg) scale(.96)" }
+    ], fall);
+
+    // клапан: чуть отклеивается, затем откидывается назад; дальше ребра (90°) – за письмом
+    var flap = { duration: 1200, delay: 550, easing: "cubic-bezier(.45,0,.2,1)" };
+    run(".env__flap", [
+      { transform: "rotateX(0deg)" },
+      { transform: "rotateX(9deg)", offset: .15 },
+      { transform: "rotateX(180deg)" }
+    ], flap);
+    run(".env__shade", [{ opacity: 0 }, { opacity: .25, offset: .15 }, { opacity: 1, offset: .55 }, { opacity: 1 }], flap);
+    run(".env__back-shade", [{ opacity: 1 }, { opacity: 1, offset: .55 }, { opacity: .2 }], flap);
+    run(".env__cast", [{ opacity: 1 }, { opacity: 0 }], { duration: 900, delay: 650, easing: "ease-out" });
+    setTimeout(function () { intro.classList.add("is-flipped"); }, 550 + 1200 * .5);
+
+    // письмо выезжает из кармана
+    run(note, [{ transform: "translateY(0)" }, { transform: "translateY(-74%)" }],
+      { duration: 1100, delay: 1600, easing: "cubic-bezier(.3,0,.15,1)" });
+
+    // конверт уходит вниз, письмо – в центр экрана, крупнее
+    setTimeout(function () {
+      var nr = note.getBoundingClientRect(), lr = letter.getBoundingClientRect();
+      var cx = nr.left + nr.width / 2, cy = nr.top + nr.height / 2;
+      var z = Math.min(2, .7 * vh / nr.height, .88 * vw / nr.width);
+      letter.style.transformOrigin = ((cx - lr.left) / k).toFixed(1) + "px " + ((cy - lr.top) / k).toFixed(1) + "px";
+      letter.style.clipPath = "none";
+      run(letter, [{ transform: "none" }, {
+        transform: "translate(" + ((vw / 2 - cx) / k).toFixed(1) + "px, " + ((vh / 2 - cy) / k).toFixed(1) + "px) scale(" + z.toFixed(3) + ")"
+      }], { duration: 1000, easing: inOut });
+      var sink = { duration: 850, easing: "cubic-bezier(.55,0,.8,.45)" };
+      [".env__body", ".env__inside", ".env__pocket"].forEach(function (sel) {
+        run(sel, [{ translate: "0 0", opacity: 1 }, { translate: "0 80%", opacity: 0 }], sink);
+      });
+      run(".env__flap", [{ translate: "0 0" }, { translate: "0 80%" }], sink);   // прозрачность – у изнанки: 3D клапана не сплющивается
+      run(".env__flap-back", [{ opacity: 1 }, { opacity: 0 }], sink);
+
+      // письмо чуть приближается и растворяется в обложку
+      run(note, [{ scale: 1 }, { scale: 1.06 }], { duration: 1600, delay: 1100, easing: "ease-out" });
+      run(intro, [{ opacity: 1 }, { opacity: 0 }], { duration: 900, delay: 1450, easing: "ease-in-out" });
+      setTimeout(reveal, 1350);
+      setTimeout(function () { intro.remove(); }, 2450);
+    }, 2850);
   }
 
   if (intro && openBtn) {
