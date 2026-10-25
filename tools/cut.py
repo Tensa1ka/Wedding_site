@@ -3,7 +3,8 @@
 Рамки «Приглашение», «Адрес», «Программа», «Дресс-код» – без текста (текст – на сайте), золотые орнаменты
 с рамок и образцов – отдельными картинками. Обложка: присланное фото и его широкая версия 1920 × 1080 (и 2880 × 1620),
 продолженная вправо и влево тем же фоном. Новые рамки – как прислали: убран только фон вокруг, «Адрес» приведён к кадру образца.
-Открытие конверта – присланная Lottie-анимация: картинки из неё и сама анимация – в assets/envelope.
+Открытие конверта – присланная Lottie-анимация: картинки из неё и сама анимация – в assets/envelope;
+клапан и карман открытого конверта – заново с присланного конверта (envelope2.png), как на образцах открытого конверта.
 Запуск: python3 tools/cut.py [имя ...]  (нужны numpy, scipy, Pillow)"""
 import base64
 import io
@@ -157,12 +158,140 @@ def heart_wreath():
 # ---------- третий набор: открытие конверта, фоны, рамки с текстом-образцом ----------
 
 ENV_DST = os.path.join(HERE, '..', 'assets', 'envelope')
+ENV_OFF = (45, 86)   # кадр конверта анимации (857 × 1528) в envelope2.png
+# края клапанов на envelope2.png – прямые x = a·y + b, найдены по перепаду яркости
+ENV_TOP = ((0.6763, -127.50), (-0.6916, 1078.02))    # верхний клапан: левый и правый край
+ENV_BOT = ((-0.7981, 1117.51), (0.7779, -154.20))    # нижний клапан; его вершина спрятана под верхним
+ENV_ROUND = 11.4                                     # скругление кончиков клапанов
+
+
+def env_line(a, b):
+    """Прямая с envelope2.png – в кадр анимации."""
+    return a, a * ENV_OFF[1] + b - ENV_OFF[0]
+
+
+def wedge_sdf(x, y, l1, l2, sides, r=0.0):
+    """Расстояние до угла между двумя прямыми (снаружи > 0, внутри < 0), кончик скруглён радиусом r.
+    sides – с какой стороны от каждой прямой угол: +1 справа (x больше), −1 слева."""
+    hs, ns = [], []
+    for (a, b), sd in zip((l1, l2), sides):
+        k = np.hypot(1, a)
+        hs.append(sd * (x - a * y - b) / k - r)
+        ns.append(np.array([sd / k, -sd * a / k]))
+    h1, h2 = hs
+    (a1, b1), (a2, b2) = l1, l2
+    # угол «внутренних» прямых (сдвинутых внутрь на r)
+    c1 = b1 + sides[0] * r * np.hypot(1, a1)
+    c2 = b2 + sides[1] * r * np.hypot(1, a2)
+    cy = (c2 - c1) / (a1 - a2)
+    cx = a1 * cy + c1
+    dot = ns[0] @ ns[1]
+    big = np.full_like(x, np.inf)
+    d1 = np.where((h1 < 0) & (h2 - h1 * dot >= 0), -h1, big)
+    d2 = np.where((h2 < 0) & (h1 - h2 * dot >= 0), -h2, big)
+    out = np.minimum(np.minimum(d1, d2), np.hypot(x - cx, y - cy))
+    inside = (h1 >= 0) & (h2 >= 0)
+    return np.where(inside, -np.minimum(h1, h2), out) - r
+
+
+def env_save(name, rgb, alpha):
+    im = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), np.clip(alpha * 255, 0, 255)]).astype(np.uint8), 'RGBA')
+    path = os.path.join(ENV_DST, name)
+    im.save(path, 'WEBP', quality=90, method=6, alpha_quality=100)
+    pv = Image.new('RGBA', im.size, (35, 39, 11, 255))
+    pv.alpha_composite(im)
+    pv.convert('RGB').save(os.path.join(PREVIEW, '_env_' + name.replace('.webp', '.png')))
+    print(f'envelope/{name} {im.size[0]}x{im.size[1]} {os.path.getsize(path) // 1024} KB')
+    return im.size
+
+
+def env_pocket():
+    """Карман открытого конверта из envelope2.png, как на присланных образцах открытого конверта:
+    вырез образуют боковые клапаны (их края идут по краям верхнего клапана), между ними – скруглённая
+    вершина нижнего клапана (у закрытого конверта она под верхним клапаном – дорисована из его же краёв).
+    Тень закрытого клапана снята с кармана в отдельный слой – он гаснет, когда клапан поднимается."""
+    a = load_rgba('envelope2.png')[ENV_OFF[1]:ENV_OFF[1] + 1528, ENV_OFF[0]:ENV_OFF[0] + 857]
+    rgb, alpha = a[..., :3], a[..., 3] / 255
+    H, W = alpha.shape
+    y, x = np.mgrid[:H, :W].astype(float)
+    tl, tr = (env_line(*l) for l in ENV_TOP)
+    bl, br = (env_line(*l) for l in ENV_BOT)
+    flap_d = wedge_sdf(x, y, tl, tr, (1, -1), ENV_ROUND)      # верхний клапан (кончик скруглён)
+    vee_d = wedge_sdf(x, y, tl, tr, (1, -1))                  # вырез без скругления – края боковых клапанов
+    bot_d = wedge_sdf(x, y, bl, br, (1, -1), ENV_ROUND)       # нижний клапан
+    side = np.clip(.5 + vee_d + .7, 0, 1)                     # на 0,7 px под клапан – без щели у закрытого
+    bottom = np.clip(.5 - bot_d, 0, 1)
+    pocket = np.maximum(side, bottom) * alpha
+    hidden = (bot_d < .5) & (flap_d < 24)       # вершина нижнего клапана под верхним и в его тени
+
+    # пиксели под самым краем клапана – ближайшими снаружи
+    ok = flap_d >= 1.5
+    idx = ndi.distance_transform_edt(~ok, return_distances=False, return_indices=True)
+    orig = rgb[idx[0], idx[1]]
+
+    # тень клапана: во сколько раз темнее на расстоянии d от края, чем вдали. Свет справа сверху – слева
+    # тень вдвое шире; профили левого и правого края (медианы по всей полосе), у кончика – по направлению к краю
+    d = np.clip(flap_d, 0, None)
+    band = (pocket > .99) & ~hidden & (alpha > .99) & (vee_d > 1) & (d > 0)
+    profs, ends = [], []
+    for m in (band & (x < 380), band & (x > 470)):
+        ref = np.median(orig[m & (d >= 150) & (d < 180)], 0)
+        prof = np.ones((181, 3))
+        ks = [k for k in range(150) if (m & (d >= k) & (d < k + 1)).sum() >= 20]
+        for c in range(3):
+            prof[:150, c] = np.interp(np.arange(150), ks, [np.median(orig[m & (d >= k) & (d < k + 1), c]) / ref[c] for k in ks])
+        prof = ndi.gaussian_filter1d(np.clip(prof, 0, 1), 1.5, axis=0)
+        end = next(k for k in range(10, 150) if prof[k:k + 4].min() > .985)
+        prof[end:] = 1
+        profs.append(np.clip(np.maximum.accumulate(prof, 0), .2, 1))
+        ends.append(end)
+    print('тень клапана: слева до', ends[0], 'px, справа до', ends[1], 'px, у края', profs[0][1].round(2), profs[1][1].round(2))
+    gy, gx = np.gradient(flap_d)
+    ang = np.arctan2(gy, gx)                                   # направление от края клапана наружу
+    nl, nr = np.arctan2(tl[0], -1), np.arctan2(-tr[0], 1)      # наружные нормали левого и правого края
+    wr = np.clip((np.arctan2(np.sin(ang - nl), np.cos(ang - nl))) / np.arctan2(np.sin(nr - nl), np.cos(nr - nl)), 0, 1)
+    s = np.stack([np.interp(d, np.arange(181), profs[0][:, c]) * (1 - wr)
+                  + np.interp(d, np.arange(181), profs[1][:, c]) * wr for c in range(3)], -1)
+    end = max(ends)
+    clean = orig / s
+
+    # вершина нижнего клапана: переносом вдоль его краёв из видимой части (кромка сохраняется);
+    # левая половина – вдоль левого края, правая – вдоль правого, по оси – плавный переход
+    apex_x = bl[0] * (br[1] - bl[1]) / (bl[0] - br[0]) + bl[1]
+    acc, wsum = np.zeros_like(clean), np.zeros(hidden.shape)
+    for (la, _), w in ((bl, np.clip((apex_x + 2 - x) / 4, 0, 1)), (br, np.clip((x - apex_x + 2) / 4, 0, 1))):
+        dx, dy = la / np.hypot(1, la), 1 / np.hypot(1, la)
+        todo = hidden & (w > 0)
+        for t in range(60, 400, 4):
+            if not todo.any():
+                break
+            sx, sy = x[todo] + dx * t, y[todo] + dy * t
+            ok_src = ndi.map_coordinates(flap_d, [sy, sx], order=1) >= 70   # за тенью клапана
+            ii, jj = np.nonzero(todo)
+            ii, jj, sx, sy = ii[ok_src], jj[ok_src], sx[ok_src], sy[ok_src]
+            for c in range(3):
+                acc[ii, jj, c] += w[ii, jj] * ndi.map_coordinates(clean[..., c], [sy, sx], order=1)
+            wsum[ii, jj] += w[ii, jj]
+            todo[ii, jj] = False
+    filled = wsum > 0
+    wf = np.clip((24 - flap_d[filled]) / 8, 0, 1)[:, None]     # к видимой части – плавно
+    clean[filled] = clean[filled] * (1 - wf) + acc[filled] / wsum[filled][:, None] * wf
+
+    # сгиб по краю боковых клапанов: тонкая складка и лёгкий блик, как на образце
+    e = np.where(bottom < .5, vee_d + .7, 99)
+    crease = 1 - .09 * np.exp(-((e - .4) / .8) ** 2) + .045 * np.exp(-((e - 2.6) / 1.3) ** 2)
+    clean = clean * crease[..., None]
+
+    shadow_w = np.clip((end - d) / 12, 0, 1)
+    return rgb, alpha, flap_d, clean, pocket, orig, shadow_w
 
 
 def envelope():
     """Открытие конверта – присланная Lottie-анимация (envelope-opening.json): картинки из неё – отдельными
     файлами .webp в assets/envelope, сама анимация без картинок – assets/envelope/envelope.js
-    (подключается обычным <script>, поэтому сайт работает и при открытии index.html с диска)."""
+    (подключается обычным <script>, поэтому сайт работает и при открытии index.html с диска).
+    Конверт – с присланного конверта (envelope2.png): клапан по его настоящему краю, карман открытого
+    конверта – боковые клапаны и вершина нижнего клапана (env_pocket), без полосы и тени по старому вырезу."""
     with open(os.path.join(SRC, 'envelope-opening.json'), encoding='utf-8') as f:
         anim = json.load(f)
     os.makedirs(ENV_DST, exist_ok=True)
@@ -175,14 +304,68 @@ def envelope():
         im.save(path, 'WEBP', quality=90, method=6, alpha_quality=100)
         a.update(u='', p=name, e=0)
         print(f'envelope/{name} {im.size[0]}x{im.size[1]} {os.path.getsize(path) // 1024} KB')
-    # в присланном файле письмо в кармане гаснет на 113–126 кадре, а слой «Письмо» появляется только на 188-м:
-    # секунду конверт стоит пустым. Письмо остаётся видимым, пока выезжает
-    for layer in anim['layers']:
-        if layer['nm'] == 'Письмо в кармане':
-            layer['ks']['o'] = {'a': 0, 'k': 100}
+
+    rgb, alpha, flap_d, clean, pocket, orig, shadow_w = env_pocket()
+    assets = {a['id']: a for a in anim['assets']}
+    layers = {l['ind']: l for l in anim['layers']}
+
+    def put(aid, name, rgb_, alpha_):
+        w, h = env_save(name, rgb_, alpha_)
+        assets.setdefault(aid, {'id': aid})
+        assets[aid].update(w=w, h=h, u='', p=name, e=0)
+        if assets[aid] not in anim['assets']:
+            anim['assets'].append(assets[aid])
+
+    # клапан – по настоящему краю (в анимации маска шла на 5–7 px внутри края) и его затенение
+    fh = np.nonzero((flap_d < 1).any(1))[0].max() + 2
+    fa = np.clip(.5 - flap_d[:fh], 0, 1) * alpha[:fh]
+    put('img_2', 'img_2.webp', rgb[:fh], fa)
+    shade = np.asarray(Image.open(os.path.join(ENV_DST, 'img_1.webp')).convert('RGBA')).astype(float)
+    k = np.polyfit(np.arange(80, 720), shade[80:720, 428, 3], 1)     # затенение – градиент сверху вниз
+    put('img_1', 'img_1.webp', np.broadcast_to(shade[shade[..., 3] > 5][:, :3].mean(0), (fh, 857, 3)),
+        fa * np.clip(np.polyval(k, np.arange(fh)) / 255, 0, 1)[:, None])
+    for i in (2, 3):
+        layers[i].pop('masksProperties', None)
+        layers[i]['hasMask'] = False
+
+    # карман и тень закрытого клапана на нём (исходные пиксели с тенью поверх кармана без неё)
+    put('img_12', 'img_12.webp', clean, pocket)
+    put('img_13', 'img_13.webp', orig, pocket * shadow_w)
+    layers[4].update(refId='img_12', hasMask=False)
+    layers[4].pop('masksProperties', None)
+    cast = json.loads(json.dumps(layers[4]))
+    cast.update(ind=16, nm='Тень клапана на кармане', refId='img_13', ip=0, op=61)
+    ease = {'o': {'x': [.45], 'y': [0]}, 'i': {'x': [.55], 'y': [1]}}
+    cast['ks']['o'] = {'a': 1, 'k': [dict(t=42, s=[100], **ease), {'t': 60, 's': [0]}]}
+    anim['layers'].insert(anim['layers'].index(layers[4]), cast)
+
+    # тень кармана на письме – та же размытая форма кармана, что была в анимации (σ 6 px, 5 px вверх)
+    pad = np.pad(pocket, 30)
+    sh = ndi.shift(ndi.gaussian_filter(pad, 6), (-5, 0), order=1) * .219
+    put('img_4', 'img_4.webp', np.broadcast_to(np.array([40., 30, 8]), sh.shape + (3,)), sh)
+
+    # вырез кармана: письмо видно над краем кармана; подкладка – до края кармана с запасом
+    tl, tr = (env_line(*l) for l in ENV_TOP)
+    bl, br = (env_line(*l) for l in ENV_BOT)
+    cross = lambda l1, l2: ((l2[1] - l1[1]) / (l1[0] - l2[0]) * l1[0] + l1[1], (l2[1] - l1[1]) / (l1[0] - l2[0]))
+    jl, jr, apex, vee = cross(tl, bl), cross(tr, br), cross(bl, br), cross(tl, tr)
+    yl, yr = -tl[1] / tl[0], (857 - tr[1]) / tr[0]
+    r2 = lambda p: [round(p[0], 2), round(p[1], 2)]
+    cut = [[0, -3056], [857, -3056], [857, yr], jr, apex, jl, [0, yl]]
+    shape = layers[6]['shapes'][0]['it'][0]['ks']['k']
+    shape.update(v=[r2(p) for p in cut], i=[[0, 0]] * len(cut), o=[[0, 0]] * len(cut))
+    lin = [[0, 0], [857, 0], [857, yr + 6], [vee[0], vee[1] + 9], [0, yl + 6]]
+    m = layers[13]['masksProperties'][0]['pt']['k']
+    m.update(v=[[p[0], round(p[1] - 14, 2)] for p in lin], i=[[0, 0]] * 5, o=[[0, 0]] * 5)
+
+    # подкладка и тень под клапаном – с 49 кадра, когда клапан начинает подниматься: раньше их видно
+    # только серыми квадратами в скруглённых верхних углах закрытого конверта
+    for i in (12, 13):
+        layers[i]['ip'] = 49
+
     path = os.path.join(ENV_DST, 'envelope.js')
     with open(path, 'w', encoding='utf-8') as f:
-        f.write('/* Открытие конверта (Lottie). Создаётся из tools/src/envelope-opening.json: python3 tools/cut.py envelope */\n')
+        f.write('/* Открытие конверта (Lottie). Создаётся из tools/src/envelope-opening.json и envelope2.png: python3 tools/cut.py envelope */\n')
         f.write('window.ENVELOPE_ANIMATION = ' + json.dumps(anim, ensure_ascii=False, separators=(',', ':')) + ';\n')
     print(f'envelope/envelope.js {os.path.getsize(path) // 1024} KB')
 
