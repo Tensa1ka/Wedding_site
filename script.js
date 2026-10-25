@@ -42,13 +42,14 @@
   }
 
   /* =========================================================
-     Лицо открытки: открытие конверта (около 5 секунд)
-     0–1,2 с   печать вдавливается, трескается и распадается на две половинки;
-     0,25–1,5  камера отъезжает: конверт меньше и ниже, чтобы открытый клапан и письмо уместились в экран;
-     0,55–1,75 клапан откидывается на петле, за ребром уходит за письмо;
-     1,6–2,7   письмо выезжает из кармана перед клапаном;
-     2,85–3,85 конверт уходит вниз, письмо выходит в центр экрана и приближается;
-     4,3–5,2   письмо растворяется – под ним обложка, на которой поднимается сердце и пишутся имена.
+     Лицо открытки: открытие конверта (около 5,5 секунды)
+     0–0,32 с  печать вдавливается и отпускает – она целая;
+     0,25–1,5  камера отъезжает: конверт меньше и ниже, чтобы открытый клапан с печатью и письмо уместились в экран;
+     0,55–1,75 клапан вместе с печатью откидывается на петле, за ребром уходит за письмо;
+     1,7–2,0   пауза 0,3 с: клапан лёг, конверт открыт, в нём письмо;
+     1,88–2,98 письмо выезжает из кармана перед клапаном (первые доли секунды – едва заметно);
+     3,13–4,13 конверт уходит вниз, письмо выходит в центр экрана и приближается;
+     4,58–5,48 письмо растворяется – под ним обложка, на которой поднимается сердце и пишутся имена.
      ========================================================= */
   var intro = document.getElementById("intro");
   var openBtn = document.getElementById("intro-open");
@@ -83,31 +84,17 @@
       return el.animate(frames, opts);
     };
 
-    // камера: открытый клапан выше конверта на половину его высоты – вся сцена должна уместиться в экран
+    // камера: открытый клапан с печатью поднимается над конвертом на 53 % его высоты – вся сцена должна уместиться в экран
     var vw = window.innerWidth, vh = window.innerHeight;
     var r = card.getBoundingClientRect();
-    var k = Math.min(1, .9 * vh / (1.507 * r.height), .92 * vw / r.width);
-    var dy = vh / 2 + .2535 * r.height * k - (r.top + r.height / 2);
+    var k = Math.min(1, .9 * vh / (1.533 * r.height), .92 * vw / r.width);
+    var dy = vh / 2 + .2665 * r.height * k - (r.top + r.height / 2);
     run(card, [{ transform: "none" }, { transform: "translateY(" + dy.toFixed(1) + "px) scale(" + k.toFixed(4) + ")" }],
       { duration: 1250, delay: 250, easing: inOut });
 
-    // печать: нажатие, трещина, половинки отпадают
-    run(".seal__img", [{ transform: "scale(1)" }, { transform: "scale(.93)", offset: .45 }, { transform: "scale(.97)" }],
+    // печать отзывается на нажатие и остаётся целой – дальше она едет вместе с клапаном
+    run(".seal__img", [{ transform: "scale(1)" }, { transform: "scale(.94)", offset: .45 }, { transform: "scale(1)" }],
       { duration: 320, easing: out });
-    run(".seal__crack path", [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 200, delay: 170, easing: "ease-in" });
-    run(".seal__img", [{ opacity: 1 }, { opacity: 0 }], { duration: 1, delay: 380 });
-    run(".seal__crack", [{ opacity: 1 }, { opacity: 0 }], { duration: 1, delay: 380 });
-    var fall = { duration: 900, delay: 380, easing: "cubic-bezier(.5,0,.75,.4)" };
-    run(".seal__half--l", [
-      { opacity: 1, transform: "translate(0, 0) rotate(0deg)" },
-      { opacity: 1, transform: "translate(-7%, 5%) rotate(-8deg)", offset: .28 },
-      { opacity: 0, transform: "translate(-24%, 120%) rotate(-34deg) scale(.96)" }
-    ], fall);
-    run(".seal__half--r", [
-      { opacity: 1, transform: "translate(0, 0) rotate(0deg)" },
-      { opacity: 1, transform: "translate(7%, 6%) rotate(7deg)", offset: .28 },
-      { opacity: 0, transform: "translate(22%, 130%) rotate(28deg) scale(.96)" }
-    ], fall);
 
     // клапан: чуть отклеивается, затем откидывается назад; дальше ребра (90°) – за письмом
     var flap = { duration: 1200, delay: 550, easing: "cubic-bezier(.45,0,.2,1)" };
@@ -119,11 +106,12 @@
     run(".env__shade", [{ opacity: 0 }, { opacity: .25, offset: .15 }, { opacity: 1, offset: .55 }, { opacity: 1 }], flap);
     run(".env__back-shade", [{ opacity: 1 }, { opacity: 1, offset: .55 }, { opacity: .2 }], flap);
     run(".env__cast", [{ opacity: 1 }, { opacity: 0 }], { duration: 900, delay: 650, easing: "ease-out" });
+    setTimeout(function () { intro.classList.add("is-lifting"); }, 550);
     setTimeout(function () { intro.classList.add("is-flipped"); }, 550 + 1200 * .5);
 
-    // письмо выезжает из кармана
+    // конверт 0,3 с стоит открытым (клапан лёг около 1,7 с, письмо заметно трогается около 2,0 с), затем письмо выезжает
     run(note, [{ transform: "translateY(0)" }, { transform: "translateY(-74%)" }],
-      { duration: 1100, delay: 1600, easing: "cubic-bezier(.3,0,.15,1)" });
+      { duration: 1100, delay: 1880, easing: "cubic-bezier(.3,0,.15,1)" });
 
     // конверт уходит вниз, письмо – в центр экрана, крупнее
     setTimeout(function () {
@@ -139,15 +127,16 @@
       [".env__body", ".env__inside", ".env__pocket"].forEach(function (sel) {
         run(sel, [{ translate: "0 0", opacity: 1 }, { translate: "0 80%", opacity: 0 }], sink);
       });
-      run(".env__flap", [{ translate: "0 0" }, { translate: "0 80%" }], sink);   // прозрачность – у изнанки: 3D клапана не сплющивается
+      run(".env__flap", [{ translate: "0 0" }, { translate: "0 80%" }], sink);   // прозрачность – у изнанки и печати: 3D клапана не сплющивается
       run(".env__flap-back", [{ opacity: 1 }, { opacity: 0 }], sink);
+      run(".seal-back", [{ opacity: 1 }, { opacity: 0 }], sink);
 
       // письмо чуть приближается и растворяется в обложку
       run(note, [{ scale: 1 }, { scale: 1.06 }], { duration: 1600, delay: 1100, easing: "ease-out" });
       run(intro, [{ opacity: 1 }, { opacity: 0 }], { duration: 900, delay: 1450, easing: "ease-in-out" });
       setTimeout(reveal, 1350);
       setTimeout(function () { intro.remove(); }, 2450);
-    }, 2850);
+    }, 3130);
   }
 
   if (intro && openBtn) {

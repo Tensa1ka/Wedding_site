@@ -100,9 +100,10 @@ h1, h2, h3, p { margin: 0; }
 
 /* =========================================================
    Лицо открытки: конверт с восковой печатью.
-   По нажатию печать трескается и распадается на две половинки; камера отъезжает, чтобы открытый клапан
-   уместился в экран; клапан откидывается на петле у верхнего края; письмо выезжает из кармана перед клапаном,
-   затем конверт уходит вниз, письмо выходит в центр и растворяется в обложку. Движение – в script.js.
+   По нажатию печать вдавливается; камера отъезжает, чтобы открытый клапан уместился в экран; клапан вместе
+   с целой печатью откидывается на петле у верхнего края; пауза – письмо в открытом конверте; письмо выезжает
+   перед клапаном, конверт уходит вниз, письмо выходит в центр и растворяется в обложку. Движение – в script.js.
+   Верхний край конверта на картинках – 0,916 % высоты (выше – прозрачная кромка): по нему проходит сгиб.
    ========================================================= */
 .intro { display: none; padding: 0; background: #efe9df url(assets/img/bg-sections.webp) 50% 0 / cover no-repeat; }
 .js .intro {
@@ -143,20 +144,19 @@ h1, h2, h3, p { margin: 0; }
     linear-gradient(rgba(252, 248, 240, .55), rgba(252, 248, 240, .55)),
     url(assets/img/env-inside.webp) 0 0 / 100% 100%;
 }
-/* форма выреза под клапаном */
-.env__inside, .env__cast { clip-path: polygon(0 0, 100% 0, 100% 8.77%, 48.42% 50.72%, 0 10.14%); }
-.env__inside {
-  position: absolute;
-  inset: 0;
-  /* по силуэту конверта: подкладка не выглядывает из скруглённых углов и прозрачного края картинки */
-  -webkit-mask: url(assets/img/env-body.webp) 0 0 / 100% 100% no-repeat;
-  mask: url(assets/img/env-body.webp) 0 0 / 100% 100% no-repeat;
-}
-.env__inside::after {   /* глубина кармана: чуть темнее у петли */
+/* форма выреза под клапаном: от сгиба (верхний край конверта) до кромки кармана; углы у сгиба прямые –
+   подкладка и откинутый клапан – один лист. У закрытого конверта углы скруглены на клапане, поэтому
+   подкладка показывается, только когда клапан начинает подниматься */
+.env__inside, .env__cast { clip-path: polygon(0 .916%, 100% .916%, 100% 8.77%, 48.42% 50.72%, 0 10.14%); }
+.env__inside { position: absolute; inset: 0; }
+.intro:not(.is-lifting) .env__inside { visibility: hidden; }
+.env__inside::after {   /* сгиб: тонкая складка и лёгкая тень под ней, без тёмной кромки */
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(70, 52, 22, .22), rgba(70, 52, 22, .06) 26%, rgba(70, 52, 22, 0) 44%);
+  background:
+    linear-gradient(180deg, rgba(120, 88, 36, 0) .916%, rgba(120, 88, 36, .22) .916%, rgba(120, 88, 36, 0) 1.35%),
+    linear-gradient(180deg, rgba(70, 52, 22, .07) .916%, rgba(70, 52, 22, 0) 22%);
 }
 .env__cast {            /* тень от клапана – уходит, пока он поднимается */
   position: absolute;
@@ -210,7 +210,7 @@ h1, h2, h3, p { margin: 0; }
 .env__flap {
   position: absolute;
   inset: 0;
-  transform-origin: 50% 0;
+  transform-origin: 50% .916%;
   transform-style: preserve-3d;
   pointer-events: none;
 }
@@ -223,19 +223,19 @@ h1, h2, h3, p { margin: 0; }
   mask: url(assets/img/env-flap.webp) 0 0 / 100% 100% no-repeat;
   opacity: 0;
 }
-/* изнанка клапана: подкладка с золотой кромкой по краю; зеркально – после поворота совпадёт с формой */
+/* изнанка клапана: та же подкладка, золотая кромка по косым краям; у сгиба углы прямые – продолжение подкладки
+   конверта. Зеркально (низ ↔ верх): после поворота совпадёт с формой клапана */
 .env__flap-back {
   position: absolute;
   inset: 0;
-  clip-path: polygon(0 100%, 100% 100%, 100% 91.23%, 48.42% 49.28%, 0 89.86%);
+  clip-path: polygon(0 99.084%, 100% 99.084%, 100% 91.23%, 48.42% 49.28%, 0 89.86%);
   background: linear-gradient(100deg, #a9782d, #e3c487 32%, #c39a4f 58%, #a3732a);
-  border-radius: 0 0 7% 7% / 0 0 3.9% 3.9%;   /* углы – как у конверта (после поворота они сверху) */
   transform: rotateX(180deg);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
-.env__flap-back::before { content: ""; position: absolute; inset: 0; clip-path: polygon(0 100%, 100% 100%, 100% 92.1%, 48.42% 50.3%, 0 90.7%); }
-.env__back-shade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(60, 44, 14, .32), rgba(60, 44, 14, .06) 60%); }
+.env__flap-back::before { content: ""; position: absolute; inset: 0; clip-path: polygon(0 99.084%, 100% 99.084%, 100% 92.1%, 48.42% 50.3%, 0 90.7%); }
+.env__back-shade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(60, 44, 14, .32) .916%, rgba(60, 44, 14, .06) 60%); }
 
 /* печать */
 .seal {
@@ -261,15 +261,22 @@ h1, h2, h3, p { margin: 0; }
   .intro:hover .seal { transform: scale(1.03); }
   .seal:active { transform: scale(.96); transition-duration: .16s; }
 }
-.seal__img, .seal__half img { width: 100%; height: 100%; max-width: none; filter: drop-shadow(0 8px 10px rgba(60, 40, 5, .35)); }
-.env__shards { position: absolute; z-index: 6; left: 48.42%; top: 47.2%; width: 27%; aspect-ratio: 560 / 588; translate: -50% -50%; pointer-events: none; }
-.seal__half { position: absolute; inset: 0; opacity: 0; }
-.seal__half img { position: absolute; inset: 0; }
-/* половинки – по линии трещины */
-.seal__half--l { clip-path: polygon(-10% -10%, 52% -10%, 52% 3%, 47% 20%, 55% 35%, 46% 51%, 54% 66%, 47% 82%, 51% 97%, 51% 110%, -10% 110%); }
-.seal__half--r { clip-path: polygon(52% -10%, 110% -10%, 110% 110%, 51% 110%, 51% 97%, 47% 82%, 54% 66%, 46% 51%, 55% 35%, 47% 20%, 52% 3%); }
-.seal__crack { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; overflow: visible; pointer-events: none; }
-.seal__crack path { fill: none; stroke: rgba(74, 44, 6, .75); stroke-width: 1.6; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; vector-effect: non-scaling-stroke; }
+.seal__img, .seal-back img { width: 100%; height: 100%; max-width: none; filter: drop-shadow(0 8px 10px rgba(60, 40, 5, .35)); }
+/* обратная сторона печати: на той же стороне клапана, смотрит назад – видна, когда клапан откинут дальше ребра.
+   Повороты клапана и её собственный складываются: печать у кончика открытого клапана стоит прямо, за кончиком */
+.seal-back {
+  position: absolute;
+  left: 48.42%;
+  top: 47.2%;
+  width: 27%;
+  aspect-ratio: 560 / 588;
+  translate: -50% -50% 1px;
+  transform: rotateX(180deg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  pointer-events: none;
+}
+.seal-back img { filter: drop-shadow(0 -6px 8px rgba(60, 40, 5, .3)) brightness(.97); }
 
 /* планшеты, ноутбуки, 1920 × 1080: конверт целиком, на фоне той же шторы, что у сайта. Телефоны – на весь экран */
 @media (min-aspect-ratio: 2 / 3) {
