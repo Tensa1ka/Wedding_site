@@ -407,7 +407,7 @@ main {
   container-type: inline-size;
   color: var(--olive-text);
 }
-.panel::before, .panel--dress::after {
+.panel::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -419,11 +419,14 @@ main {
   border-image-repeat: stretch;
   filter: drop-shadow(0 22px 30px rgba(60, 62, 40, .16));
 }
-/* у «Дресс-кода» ровной полосы на всю ширину нет (левый букет спускается ниже, чем начинается правый):
-   левая и правая половины – одна и та же картинка, каждая тянется по своей полосе; шов по середине бумаги,
-   половины заходят друг на друга на 3 px */
-.panel--dress::before { clip-path: inset(-10% calc(50% - 3px) -10% -10%); }
-.panel--dress::after { --cut-t: 528; --cut-b: 864; clip-path: inset(-10% -10% -10% calc(50% - 3px)); }
+/* у «Дресс-кода» бока – жемчужная нитка: полоса из 4 жемчужин (строки 773–937) не растягивается, а повторяется
+   (round – целое число раз); боковые планки – отдельными краями той же ширины, чтобы масштаб был как у всей рамки */
+.panel--dress::before {
+  border-image-slice: var(--cut-t) var(--side) var(--cut-b) var(--side) fill;
+  border-image-width: calc(100cqi * var(--cut-t) / var(--frame-w)) calc(100cqi * var(--side) / var(--frame-w))
+                      calc(100cqi * var(--cut-b) / var(--frame-w)) calc(100cqi * var(--side) / var(--frame-w));
+  border-image-repeat: stretch round;
+}
 .panel__body {
   display: flex;
   flex-direction: column;
@@ -432,7 +435,7 @@ main {
   padding: var(--pad);
 }
 .panel--invite { --frame: url(assets/img/frame-invite.webp); --frame-w: 942; --frame-h: 1533; --cut-t: 1020; --cut-b: 423; --pad: 50.5cqi 13cqi 14.5cqi; }
-.panel--dress { --frame: url(assets/img/frame-dress.webp); --frame-w: 869; --frame-h: 1790; --cut-t: 970; --cut-b: 237; --pad: 45cqi 16cqi 17.6cqi 20cqi; }
+.panel--dress { --frame: url(assets/img/frame-dress.webp); --frame-w: 869; --frame-h: 1765; --cut-t: 773; --cut-b: 828; --side: 120; --pad: 45cqi 16cqi 17.6cqi 20cqi; }
 
 .panel .title { font-size: 11cqi; line-height: .95; color: inherit; }
 .panel .text { max-width: none; margin: 2.2cqi 0 0; font-weight: 600; font-size: max(15px, 3.3cqi); line-height: 1.12; text-wrap: balance; }

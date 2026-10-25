@@ -421,11 +421,11 @@ def ornament(name, rgb, clean, box, clear=None):
 
 
 # ---------- пятый набор: присланные рамки без текста (текст – на сайте), орнаменты – с образцов ----------
-# frame-1.webp – слои SVG «Рамка 1», сведённые без изменений; frame-dress.jpg – присланная рамка «Дресс-код»;
-# frame-pearl.webp – «Оригинальная жемчужно-золотая рамка» из Figma;
+# frame-1.webp – слои SVG «Рамка 1», сведённые без изменений; frame-dress-pearl.webp и frame-place-pearl.jpg –
+# присланные жемчужные рамки «Дресс-код» и «Адрес» (на чёрном);
 # sample-*.jpg / sample-place.webp – образцы из архива «образец страниц сайта» (с них – лилия и линии «Адреса»).
 # На сайте прямоугольные рамки тянутся по высоте под текст: растягивается полоса с ровными планками
-# (у «Рамки 1» – строки 1020–1110; у «Дресс-кода» – своя полоса у левой и правой половины, см. frame_dress).
+# (у «Рамки 1» – строки 1020–1110; у «Дресс-кода» полоса из целого числа жемчужин повторяется, см. frame_dress).
 
 def smooth_fill(rgb, known, sigma):
     """Плавная заливка по известным пикселям (взвешенное гауссово среднее);
@@ -453,7 +453,7 @@ def paper_tone(img, region, k=4, size=9, tol=8):
     return smooth_fill(img, known, 6)
 
 
-def cut_black(rgb, band=1):
+def cut_black(rgb, band=1, min_hole=6):
     """Фон – чёрный: прозрачный, вместе с закрытыми просветами и тёмной каймой у края;
     край силуэта – доля яркости от ближайшего пикселя изнутри (сглаживание без чёрного ореола).
     band > 1 – ещё и тусклое серое свечение на band пикселей от края (у мелких белых цветов) становится
@@ -462,33 +462,13 @@ def cut_black(rgb, band=1):
     dark = mx <= 10
     lab, n = ndi.label(dark)
     keep = np.zeros(n + 1, bool)
-    keep[1:] = ndi.sum(dark, lab, range(1, n + 1)) >= 6
+    keep[1:] = ndi.sum(dark, lab, range(1, n + 1)) >= min_hole    # min_hole 1 – и мелкие просветы кружевной сетки
     bg = keep[lab]
     glow = (mx - rgb.min(2) < 18) & (rgb.mean(2) < 150) if band > 1 else np.ones(mx.shape, bool)
     for _ in range(3):
         bg |= ndi.binary_dilation(bg) & (mx < 45) & glow
     fg = ndi.binary_opening(~bg, iterations=1)                 # без одиночных крошек
     return edge_alpha(rgb, fg, lambda P, F: P.sum(2) / np.maximum(F.sum(2), 1), .4, band, glow)
-
-
-def cut_white(rgb, white=254.):
-    """Фон – белый вокруг рамки: прозрачный, вместе с просветами внутри кружева (белые пятна в завитках и между
-    листьями: вокруг них – золото). Блики на жемчуге (вокруг – светлый перламутр) и тонкие блики по краям листьев
-    остаются. Край – доля отличия от белого у ближайшего пикселя изнутри."""
-    lum = rgb.mean(2)
-    cand = (lum >= 240) & (rgb.max(2) - rgb.min(2) <= 6)
-    lab, n = ndi.label(cand)
-    idx = np.arange(1, n + 1)
-    edge = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
-    ring = ndi.grey_dilation(lab, size=5) * (lab == 0)        # соседи каждого пятна
-    dark_ring = ndi.mean(lum, ring, idx) < 220
-    thick = ndi.sum(ndi.binary_erosion(cand), lab, idx) >= 4   # не тонкая линия блика
-    hole = np.zeros(n + 1, bool)
-    hole[1:] = dark_ring & thick
-    hole[edge] = True
-    hole[0] = False
-    fg = ~hole[lab]
-    return edge_alpha(rgb, fg, lambda P, F: (white - P).sum(2) / np.maximum((white - F).sum(2), 1), 0)
 
 
 def edge_alpha(rgb, fg, share, blur, band=1, soft=None):
@@ -500,12 +480,6 @@ def edge_alpha(rgb, fg, share, blur, band=1, soft=None):
     alpha = np.where(core, 1.0, np.where(fg, np.clip(share(rgb, F), 0, 1), 0.0))
     col = np.where(core[..., None], rgb, F)
     return col, ndi.gaussian_filter(alpha, blur) if blur else alpha
-
-
-def resize_rgba(rgb, alpha, size):
-    im = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), alpha * 255]).round().astype(np.uint8), 'RGBA')
-    a = np.asarray(im.convert('RGBa').resize(size, Image.LANCZOS).convert('RGBA')).astype(float)
-    return a[..., :3], a[..., 3] / 255
 
 
 def frame_invite():
@@ -521,34 +495,57 @@ def frame_invite():
     ornament('orn-heart', rgb, clean, (1292, 1378, 388, 492))
 
 
-# поле для текста у прежней рамки «Дресс-код» (в кадре 869 × 1775) и у присланной новой (frame-dress.jpg, 884 × 1780):
-# новая рамка приводится к прежнему полю, поэтому раскладка текста в style.css не меняется
+# Новые рамки подгоняются под поле для текста прежних, поэтому раскладка текста в style.css не меняется.
+# «Дресс-код»: поле прежней рамки в кадре 869 × 1775 и поле присланной frame-dress-pearl.webp (884 × 1779) –
+# x слева и справа посередине высоты, y сверху и снизу между цветами.
 DRESS_FIELD_OLD = (107, 251, 782, 1654)
-DRESS_FIELD_NEW = (110, 238, 794, 1635)
+DRESS_FIELD_NEW = (97, 176, 784, 1566)
+DRESS_GAP = 133          # от низа поля до низа кадра – как у прежней рамки (больше – если цветок внизу ниже)
+DRESS_SIDE = 120         # ширина боковых планок для border-image (жемчужная нитка и золотые линии)
+# «Адрес»: овал поля текущей рамки (1024 × 1536) и присланной frame-place-pearl.jpg (1024 × 1536)
+PLACE_FIELD_OLD = (182, 298, 841, 1234)
+PLACE_FIELD_NEW = (174, 289, 849, 1212)
+
+
+def fit_frame(rgb, alpha, sx, sy, tx, ty, size):
+    """Масштаб sx, sy и сдвиг tx, ty в кадр size (премультиплицированно – без тёмной каймы на краях)."""
+    im = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), alpha * 255]).round().astype(np.uint8), 'RGBA').convert('RGBa')
+    im = im.transform(size, Image.AFFINE, (1 / sx, 0, -tx / sx, 0, 1 / sy, -ty / sy), Image.BICUBIC).convert('RGBA')
+    a = np.asarray(im).astype(float)
+    return a[..., :3], a[..., 3] / 255
 
 
 def frame_dress():
-    """Рамка «Дресс-код» – присланная frame-dress.jpg: чёрный фон – прозрачный, рамка совмещена с полем прежней
-    (масштаб по ширине −1,3 %, по высоте +0,4 % – на глаз незаметно). Лилия у «оставить для невесты» – с образца.
-    Ровной полосы на всю ширину у рамки нет (левый букет ниже, чем начинается правый): печатает полосы
-    для растяжения левой и правой половин – --cut-* в style.css."""
-    rgb, alpha = cut_black(load('frame-dress.jpg'), band=4)
-    (ox0, oy0, ox1, oy1), (nx0, ny0, nx1, ny1) = DRESS_FIELD_OLD, DRESS_FIELD_NEW
-    sx, sy = (ox1 - ox0) / (nx1 - nx0), (oy1 - oy0) / (ny1 - ny0)
-    tx, ty = ox0 - nx0 * sx, oy0 - ny0 * sy
-    H = max(1775, int(np.ceil(np.where(alpha.max(1) > .03)[0][-1] * sy + ty)) + 3)
-    im = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), alpha * 255]).round().astype(np.uint8), 'RGBA').convert('RGBa')
-    im = im.transform((869, H), Image.AFFINE, (1 / sx, 0, -tx / sx, 0, 1 / sy, -ty / sy), Image.BICUBIC).convert('RGBA')
-    a = np.asarray(im).astype(float)
-    rgb, alpha = a[..., :3], a[..., 3] / 255
+    """Рамка «Дресс-код» – присланная жемчужная frame-dress-pearl.webp: чёрный фон – прозрачный; масштаб одинаковый
+    по обеим осям – ширина поля как у прежней рамки, верх поля на том же месте, низ кадра – на DRESS_GAP ниже поля.
+    Лилия у «оставить для невесты» – с образца.
+    Бока рамки – жемчужная нитка: при вытягивании под текст полоса из целого числа жемчужин повторяется
+    (border-image round), а не растягивается. Печатает её строки – --cut-* в style.css."""
+    rgb, alpha = cut_black(load('frame-dress-pearl.webp'), band=4)
+    (ox0, oy0, ox1, _), (nx0, ny0, nx1, ny1) = DRESS_FIELD_OLD, DRESS_FIELD_NEW
+    k = (ox1 - ox0) / (nx1 - nx0)
+    tx, ty = ox0 - nx0 * k, oy0 - ny0 * k
+    low = np.where(alpha.max(1) > .03)[0][-1] * k + ty         # нижний край цветка
+    H = int(np.ceil(max(ny1 * k + ty + DRESS_GAP, low + 3)))
+    rgb, alpha = fit_frame(rgb, alpha, k, k, tx, ty, (869, H))
     save_full('frame-dress', rgb, alpha, quality=88)
-    flat = np.dstack([rgb * alpha[..., None], alpha[..., None] * 255])
-    busy = (np.abs(np.diff(flat, axis=0)).max(2) > 10)
-    for side, cols in (('левая', slice(0, 869 // 2)), ('правая', slice(869 // 2, 869))):
-        ys = np.where(busy[300:1650, cols].sum(1) <= 2)[0] + 300
-        runs = np.split(ys, np.where(np.diff(ys) > 1)[0] + 1)
-        r = max(runs, key=len)
-        print(f'  {side} половина тянется: строки {r[0] + 2}–{r[-1] - 2} (--cut-t {r[0] + 2}, --cut-b {H - r[-1] + 2}), кадр {H}')
+    # полоса для повторения: высота – целое число жемчужин, строки над и под ней совпадают на обоих боках
+    flat = rgb * alpha[..., None]
+    sides = np.r_[0:DRESS_SIDE, 869 - DRESS_SIDE:869]
+    sig = flat[400:1300, 40:110].mean((1, 2))
+    sig = sig - sig.mean()
+    ac = np.correlate(sig, sig, 'full')[len(sig) - 1:]
+    period = 15 + np.argmax(ac[15:120])
+    best = None
+    for n in (3, 4, 5):
+        h = int(round(n * period))
+        for r in range(int(ny0 * k + ty) + 450, int(ny1 * k + ty) - 650 - h):
+            err = np.abs(flat[r - 2:r + 3, sides] - flat[r + h - 2:r + h + 3, sides]).mean()
+            if best is None or err < best[0]:
+                best = (err, r, h)
+    err, r, h = best
+    print(f'  кадр 869 × {H}, шаг жемчуга {period}, полоса строк {r}–{r + h} ({h} = {h / period:.2f} шага, '
+          f'шов {err:.1f}): --frame-h {H}; --cut-t {r}; --cut-b {H - r - h}; бока {DRESS_SIDE}')
     y0, y1, x0, x1 = 812, 930, 650, 798
     s = load('sample-dress.jpg')[y0:y1, x0:x1]
     paper = np.median(s.reshape(-1, 3), 0)
@@ -565,9 +562,17 @@ def frame_dress():
 
 
 def frame_place():
-    """Оригинальная жемчужная рамка (белый фон – прозрачный) в кадре образца 1024 × 1536, без текста.
-    Линии с лилией и подвеска под «Открыть на карте» – с образца, отдельными картинками."""
-    rgb, alpha = resize_rgba(*cut_white(load('frame-pearl.webp')), (1024, 1536))
+    """«Адрес» – присланная жемчужная овальная рамка frame-place-pearl.jpg (1024 × 1536): чёрный фон – прозрачный,
+    овал поля совмещён с полем прежней рамки (по ширине −2,4 %, по высоте +1,4 %); если нижний цветок выходит
+    за кадр, рамка чуть приподнимается. Линии с лилией и подвеска под «Открыть на карте» – с образца."""
+    rgb, alpha = cut_black(load('frame-place-pearl.jpg'), band=4, min_hole=1)
+    (ox0, oy0, ox1, oy1), (nx0, ny0, nx1, ny1) = PLACE_FIELD_OLD, PLACE_FIELD_NEW
+    sx, sy = (ox1 - ox0) / (nx1 - nx0), (oy1 - oy0) / (ny1 - ny0)
+    tx, ty = ox0 - nx0 * sx, oy0 - ny0 * sy
+    rows = np.where(alpha.max(1) > .03)[0]
+    ty -= max(0, rows[-1] * sy + ty - (1536 - 3))
+    print(f'  поле: x {nx0 * sx + tx:.0f}–{nx1 * sx + tx:.0f}, y {ny0 * sy + ty:.0f}–{ny1 * sy + ty:.0f} (прежнее {PLACE_FIELD_OLD})')
+    rgb, alpha = fit_frame(rgb, alpha, sx, sy, tx, ty, (1024, 1536))
     save_full('frame-place', rgb, alpha, quality=88)
     s = load_rgba('sample-place.webp')[..., :3]
     yy, xx = np.mgrid[:1536, :1024]
