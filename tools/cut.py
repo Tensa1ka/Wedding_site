@@ -3,7 +3,11 @@
 Рамки «Приглашение», «Адрес», «Программа», «Дресс-код» – без текста (текст – на сайте), золотые орнаменты
 с рамок и образцов – отдельными картинками. Обложка: присланное фото и его широкая версия 1920 × 1080 (и 2880 × 1620),
 продолженная вправо и влево тем же фоном. Новые рамки – как прислали: убран только фон вокруг, «Адрес» приведён к кадру образца.
+Открытие конверта – присланная Lottie-анимация: картинки из неё и сама анимация – в assets/envelope.
 Запуск: python3 tools/cut.py [имя ...]  (нужны numpy, scipy, Pillow)"""
+import base64
+import io
+import json
 import os
 import sys
 import numpy as np
@@ -150,42 +154,37 @@ def heart_wreath():
     return save('heart-wreath', rgb, alpha)
 
 
-# ---------- третий набор: конверт во весь экран, фоны, рамки с текстом-образцом ----------
+# ---------- третий набор: открытие конверта, фоны, рамки с текстом-образцом ----------
 
-ENV_FLAP = [(0, 0), (857, 0), (857, 134), (415, 775), (0, 155)]   # верхний клапан в кадре конверта
-
-
-def poly_mask(shape, pts):
-    from PIL import ImageDraw
-    im = Image.new('L', (shape[1], shape[0]), 0)
-    ImageDraw.Draw(im).polygon(pts, fill=255)
-    return np.asarray(im) > 127
+ENV_DST = os.path.join(HERE, '..', 'assets', 'envelope')
 
 
-def envelope_full():
-    """Конверт: корпус (под клапаном – внутренняя сторона) и верхний клапан отдельно,
-    оба в одном кадре – на сайте клапан поворачивается на петле у верхнего края."""
-    a = load_rgba('envelope2.png')[86:1614, 45:902]
-    rgb, alpha = a[..., :3], a[..., 3] / 255
-    H, W = alpha.shape
-    flap = poly_mask((H, W), ENV_FLAP)
-    px = rgb[(alpha > .99) & ~flap][::7]
-    paper = np.median(px[px.mean(1) > np.percentile(px.mean(1), 70)], 0)   # сама бумага, без узора
-    # внутренняя сторона: бумага чуть темнее, к верхнему краю – мягкая тень кармана
-    yy = np.mgrid[:H, :W][0]
-    inside = paper * np.array([.97, .96, .95]) * (1 - .1 * np.clip(1 - yy / (H * .5), 0, 1))[..., None]
-    rng = np.random.default_rng(9)
-    inside = inside + ndi.gaussian_filter(rng.normal(0, 2, (H, W)), .9)[..., None]
-    cover = ndi.binary_dilation(flap, iterations=7)          # с запасом: тень клапана тоже уходит
-    soft = ndi.gaussian_filter(cover.astype(float), 1.2)[..., None]
-    body = rgb * (1 - soft) + inside * soft
-    save('env-body', body, alpha, quality=86)
-    fa = ndi.gaussian_filter(flap.astype(float), .8) * alpha
-    save_full('env-flap', rgb, fa)
-    s = load_rgba('seal2.png')[102:1141, 134:1124]
-    rgb_s, a_s = shrink(s[..., :3], s[..., 3] / 255, 560)
-    save('env-seal', rgb_s, a_s)
-    print('paper', paper.round())
+def envelope():
+    """Открытие конверта – присланная Lottie-анимация (envelope-opening.json): картинки из неё – отдельными
+    файлами .webp в assets/envelope, сама анимация без картинок – assets/envelope/envelope.js
+    (подключается обычным <script>, поэтому сайт работает и при открытии index.html с диска)."""
+    with open(os.path.join(SRC, 'envelope-opening.json'), encoding='utf-8') as f:
+        anim = json.load(f)
+    os.makedirs(ENV_DST, exist_ok=True)
+    for a in anim['assets']:
+        if not a.get('p', '').startswith('data:'):
+            continue
+        im = Image.open(io.BytesIO(base64.b64decode(a['p'].split(',', 1)[1])))
+        name = a['id'] + '.webp'
+        path = os.path.join(ENV_DST, name)
+        im.save(path, 'WEBP', quality=90, method=6, alpha_quality=100)
+        a.update(u='', p=name, e=0)
+        print(f'envelope/{name} {im.size[0]}x{im.size[1]} {os.path.getsize(path) // 1024} KB')
+    # в присланном файле письмо в кармане гаснет на 113–126 кадре, а слой «Письмо» появляется только на 188-м:
+    # секунду конверт стоит пустым. Письмо остаётся видимым, пока выезжает
+    for layer in anim['layers']:
+        if layer['nm'] == 'Письмо в кармане':
+            layer['ks']['o'] = {'a': 0, 'k': 100}
+    path = os.path.join(ENV_DST, 'envelope.js')
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write('/* Открытие конверта (Lottie). Создаётся из tools/src/envelope-opening.json: python3 tools/cut.py envelope */\n')
+        f.write('window.ENVELOPE_ANIMATION = ' + json.dumps(anim, ensure_ascii=False, separators=(',', ':')) + ';\n')
+    print(f'envelope/envelope.js {os.path.getsize(path) // 1024} KB')
 
 
 def save_full(name, rgb, alpha, quality=86):
@@ -204,21 +203,6 @@ def flowers_bottom():
     a = load_rgba('flowers-bottom.png')
     rgb, alpha = shrink(a[..., :3], a[..., 3] / 255, 1600)
     save('flowers-bottom', rgb, alpha)
-
-
-def env_inside():
-    """Подкладка конверта (внутренняя сторона и изнанка клапана): та же бумага, без узора."""
-    a = load_rgba('envelope2.png')[86:1614, 45:902]
-    rgb, alpha = a[..., :3], a[..., 3] / 255
-    H, W = alpha.shape
-    flap = poly_mask((H, W), ENV_FLAP)
-    px = rgb[(alpha > .99) & ~flap][::7]
-    paper = np.median(px[px.mean(1) > np.percentile(px.mean(1), 70)], 0)
-    rng = np.random.default_rng(12)
-    fibre = ndi.gaussian_filter(rng.normal(0, 1, (H, W)), (6, 1.2))          # продольные волокна бумаги
-    fibre = fibre / fibre.std() * 2.2 + ndi.gaussian_filter(rng.normal(0, 1.4, (H, W)), .8)
-    lining = paper * np.array([.97, .96, .94]) + fibre[..., None]
-    save_full('env-inside', lining, np.ones((H, W)))
 
 
 # ---------- четвёртый набор: обложка под 1920 × 1080 и новые рамки ----------
@@ -582,7 +566,7 @@ def frame_place():
     ornament('orn-pendant', s, clean, (1095, 1129, 474, 554))   # подвеска под «Открыть на карте» (линия – на сайте)
 
 
-ALL = {f.__name__: f for f in (heart_wreath, envelope_full, backgrounds, flowers_bottom, env_inside, hero,
+ALL = {f.__name__: f for f in (heart_wreath, envelope, backgrounds, flowers_bottom, hero,
                                frame_program, frame_invite, frame_dress, frame_place)}
 if __name__ == '__main__':
     for n in sys.argv[1:] or ALL:
