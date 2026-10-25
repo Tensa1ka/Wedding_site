@@ -295,10 +295,11 @@ def envelope():
     with open(os.path.join(SRC, 'envelope-opening.json'), encoding='utf-8') as f:
         anim = json.load(f)
     os.makedirs(ENV_DST, exist_ok=True)
+    src = {}
     for a in anim['assets']:
         if not a.get('p', '').startswith('data:'):
             continue
-        im = Image.open(io.BytesIO(base64.b64decode(a['p'].split(',', 1)[1])))
+        im = src[a['id']] = Image.open(io.BytesIO(base64.b64decode(a['p'].split(',', 1)[1])))
         name = a['id'] + '.webp'
         path = os.path.join(ENV_DST, name)
         im.save(path, 'WEBP', quality=90, method=6, alpha_quality=100)
@@ -320,7 +321,7 @@ def envelope():
     fh = np.nonzero((flap_d < 1).any(1))[0].max() + 2
     fa = np.clip(.5 - flap_d[:fh], 0, 1) * alpha[:fh]
     put('img_2', 'img_2.webp', rgb[:fh], fa)
-    shade = np.asarray(Image.open(os.path.join(ENV_DST, 'img_1.webp')).convert('RGBA')).astype(float)
+    shade = np.asarray(src['img_1'].convert('RGBA')).astype(float)
     k = np.polyfit(np.arange(80, 720), shade[80:720, 428, 3], 1)     # затенение – градиент сверху вниз
     put('img_1', 'img_1.webp', np.broadcast_to(shade[shade[..., 3] > 5][:, :3].mean(0), (fh, 857, 3)),
         fa * np.clip(np.polyval(k, np.arange(fh)) / 255, 0, 1)[:, None])
@@ -344,7 +345,7 @@ def envelope():
     sh = ndi.shift(ndi.gaussian_filter(pad, 6), (-5, 0), order=1) * .219
     put('img_4', 'img_4.webp', np.broadcast_to(np.array([40., 30, 8]), sh.shape + (3,)), sh)
 
-    # вырез кармана: письмо видно над краем кармана; подкладка – до края кармана с запасом
+    # вырез кармана: письмо видно над краем кармана; подкладка (ниже) – до края кармана с запасом
     tl, tr = (env_line(*l) for l in ENV_TOP)
     bl, br = (env_line(*l) for l in ENV_BOT)
     cross = lambda l1, l2: ((l2[1] - l1[1]) / (l1[0] - l2[0]) * l1[0] + l1[1], (l2[1] - l1[1]) / (l1[0] - l2[0]))
@@ -354,9 +355,33 @@ def envelope():
     cut = [[0, -3056], [857, -3056], [857, yr], jr, apex, jl, [0, yl]]
     shape = layers[6]['shapes'][0]['it'][0]['ks']['k']
     shape.update(v=[r2(p) for p in cut], i=[[0, 0]] * len(cut), o=[[0, 0]] * len(cut))
-    lin = [[0, 0], [857, 0], [857, yr + 6], [vee[0], vee[1] + 9], [0, yl + 6]]
-    m = layers[13]['masksProperties'][0]['pt']['k']
-    m.update(v=[[p[0], round(p[1] - 14, 2)] for p in lin], i=[[0, 0]] * 5, o=[[0, 0]] * 5)
+
+    # клапан поднимается, не расширяясь: в анимации петля растягивала его до 109 % ширины –
+    # верх становился шире конверта, на сгибе получалась ступенька
+    for k in layers[901]['ks']['s']['k']:
+        k['s'][0] = 100
+    # углы у сгиба. У закрытого конверта углы клапана сильно скруглены (≈ 68 px) – подкладка и тень на ней,
+    # пока клапан поднимается, скруглены сильнее (80 px) и не выглядывают из-под них; пока клапан
+    # переворачивается (58–66 кадр), их скругление уменьшается до 10 px. У изнанки клапана у сгиба – 10 px:
+    # открытый конверт у сгиба почти прямоугольный, как на образце
+    def lining_shape(r):
+        k = .5523 * r
+        v = [[r, 0], [857 - r, 0], [857, r], [857, yr + 6 - 14], [vee[0], vee[1] + 9 - 14], [0, yl + 6 - 14], [0, r]]
+        i = [[-k, 0], [0, 0], [0, -k], [0, 0], [0, 0], [0, 0], [0, 0]]
+        o = [[0, 0], [k, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, -k]]
+        return {'i': i, 'o': o, 'v': [[round(x_, 2), round(y_, 2)] for x_, y_ in v], 'c': True}
+    mask = layers[13]['masksProperties'][0]
+    mask['pt'] = {'a': 1, 'k': [dict(t=58, s=[lining_shape(80)], **ease), {'t': 66, 's': [lining_shape(10)]}]}
+    layers[12]['masksProperties'] = [json.loads(json.dumps(mask))]
+    layers[12]['hasMask'] = True
+    for aid in ('img_7', 'img_6'):                      # изнанка клапана и тень на ней: сгиб – нижний ряд
+        im = np.asarray(src[aid].convert('RGBA')).astype(float)
+        h_, w_ = im.shape[:2]
+        yy, xx = np.mgrid[:h_, :w_].astype(float)
+        cx, cy = np.minimum(xx, w_ - 1 - xx), h_ - 1 - yy
+        r = 10
+        cov = np.where((cx < r) & (cy < r), np.clip(r - np.hypot(r - cx, r - cy) + .5, 0, 1), 1)
+        put(aid, aid + '.webp', im[..., :3], im[..., 3] / 255 * cov)
 
     # подкладка и тень под клапаном – с 49 кадра, когда клапан начинает подниматься: раньше их видно
     # только серыми квадратами в скруглённых верхних углах закрытого конверта
