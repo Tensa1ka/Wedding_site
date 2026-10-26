@@ -99,12 +99,12 @@ h1, h2, h3, p { margin: 0; }
 .title + .text { margin-top: .85em; }
 
 /* =========================================================
-   Лицо открытки: конверт с восковой печатью.
-   По нажатию печать трескается и распадается на две половинки; камера отъезжает, чтобы открытый клапан
-   уместился в экран; клапан откидывается на петле у верхнего края; письмо выезжает из кармана перед клапаном,
-   затем конверт уходит вниз, письмо выходит в центр и растворяется в обложку. Движение – в script.js.
+   Лицо открытки: присланная анимация открытия конверта (Lottie, assets/envelope; запуск – в script.js).
+   Кадр анимации 1080 × 1920 виден целиком: по высоте экрана, но не шире экрана там, где нужно, –
+   письмо в конце занимает ≈ 990 из 1080 пикселей кадра и не обрезается. Вокруг – та же штора, что у сайта;
+   пока письмо растворяется, растворяется и штора – под ними обложка.
    ========================================================= */
-.intro { display: none; padding: 0; background: #efe9df url(assets/img/bg-sections.webp) 50% 0 / cover no-repeat; }
+.intro { display: none; padding: 0; }
 .js .intro {
   position: fixed;
   inset: 0;
@@ -115,173 +115,49 @@ h1, h2, h3, p { margin: 0; }
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.envelope { position: absolute; inset: 0; }
-/* телефоны: конверт закрывает экран целиком (как cover); +6 % – скруглённые углы картинки уходят за край */
-.env__card {
-  --env-h: calc(max(100svh, 100vw / .5609) * 1.06);
+.intro::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #efe9df url(assets/img/bg-sections.webp) 50% 0 / cover no-repeat;
+  transition: opacity .9s ease-in-out;
+}
+.intro.is-leaving { pointer-events: none; }
+.intro.is-leaving::before { opacity: 0; }
+.intro__box {
+  --u: min(100vh / 1920, 100vw / 990);   /* один пиксель кадра анимации */
   position: absolute;
   top: 50%;
   left: 50%;
-  width: calc(max(100vw, 100svh * .5609) * 1.06);
-  height: var(--env-h);
+  inline-size: calc(1080 * var(--u));
+  block-size: calc(1920 * var(--u));
   translate: -50% -50%;
-  perspective: calc(var(--env-h) * 2.4);
-  perspective-origin: 50% 30%;
 }
-/* слои по порядку: корпус, подкладка кармана, письмо, передняя стенка кармана, клапан
-   (когда клапан откинут дальше ребра, он уходит за письмо – класс .is-flipped) */
-.env__body, .env__flap-front, .env__pocket img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; }
-.env__inside { z-index: 1; }
-.env__letter { z-index: 3; }
-.env__pocket { z-index: 4; }
-.env__flap { z-index: 5; }
-.intro.is-flipped .env__flap { z-index: 2; }
+@supports (height: 100svh) { .intro__box { --u: min(100svh / 1920, 100vw / 990); } }
+.intro__anim { position: absolute; inset: 0; }
+.intro__anim svg { display: block; }
 
-/* подкладка: светлая бумага того же оттенка, что конверт */
-.env__inside, .env__flap-back::before {
-  background:
-    linear-gradient(rgba(252, 248, 240, .55), rgba(252, 248, 240, .55)),
-    url(assets/img/env-inside.webp) 0 0 / 100% 100%;
-}
-/* форма выреза под клапаном */
-.env__inside, .env__cast { clip-path: polygon(0 0, 100% 0, 100% 8.77%, 48.42% 50.72%, 0 10.14%); }
-.env__inside {
-  position: absolute;
-  inset: 0;
-  /* по силуэту конверта: подкладка не выглядывает из скруглённых углов и прозрачного края картинки */
-  -webkit-mask: url(assets/img/env-body.webp) 0 0 / 100% 100% no-repeat;
-  mask: url(assets/img/env-body.webp) 0 0 / 100% 100% no-repeat;
-}
-.env__inside::after {   /* глубина кармана: чуть темнее у петли */
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(70, 52, 22, .22), rgba(70, 52, 22, .06) 26%, rgba(70, 52, 22, 0) 44%);
-}
-.env__cast {            /* тень от клапана – уходит, пока он поднимается */
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(40, 30, 8, .4), rgba(40, 30, 8, .18) 45%, rgba(40, 30, 8, .1));
-}
-
-/* письмо: видно в вырезе, выезжает вверх перед откинутым клапаном */
-.env__letter { position: absolute; inset: 0; clip-path: polygon(0 -200%, 100% -200%, 100% 8.77%, 48.42% 50.72%, 0 10.14%); container-type: inline-size; }
-.env__note {
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  top: 4.5%;
-  height: 56%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-bottom: 6cqi;
-  border-radius: .8cqi;
-  background: linear-gradient(180deg, #fdfbf6, #f4eee1);
-  box-shadow: 0 -.6cqi 2.4cqi rgba(30, 24, 6, .22), 0 3cqi 6cqi rgba(60, 46, 16, .18);
-}
-.env__note::before { content: ""; position: absolute; inset: 2.6cqi; border: 1px solid rgba(192, 149, 83, .75); border-radius: .4cqi; }
-.env__note-kicker { font-weight: 500; font-size: 3.4cqi; letter-spacing: .24em; text-transform: uppercase; color: var(--olive-soft); }
-.env__note-names { margin-top: 2.4cqi; font-family: var(--script); font-size: 10.4cqi; line-height: 1.05; color: var(--olive); white-space: nowrap; }
-.env__note-rule {       /* золотые линии со звёздочкой – как разделители на рамках */
-  position: relative;
-  inline-size: 30cqi;
-  block-size: 3.4cqi;
-  margin-top: 2cqi;
-  background: url(assets/img/orn-sparkle.webp) 50% 50% / auto 100% no-repeat;
-}
-.env__note-rule::before, .env__note-rule::after {
-  content: "";
-  position: absolute;
-  inset-block-start: 50%;
-  inline-size: calc(50% - 2.6cqi);
-  block-size: max(1px, .3cqi);
-}
-.env__note-rule::before { inset-inline-start: 0; background: linear-gradient(90deg, rgba(199, 155, 69, 0), var(--gold)); }
-.env__note-rule::after { inset-inline-end: 0; background: linear-gradient(270deg, rgba(199, 155, 69, 0), var(--gold)); }
-.env__note-date { margin-top: 1.6cqi; font-weight: 500; font-size: 4.2cqi; letter-spacing: .12em; color: var(--olive-ink); }
-.env__note-lily { inline-size: 13cqi; margin-top: 4cqi; }
-/* передняя стенка кармана отбрасывает тень на письмо */
-.env__pocket { position: absolute; inset: 0; filter: drop-shadow(0 -3px 6px rgba(40, 30, 8, .22)); }
-.env__pocket img { clip-path: polygon(0 10.14%, 48.42% 50.72%, 100% 8.77%, 100% 100%, 0 100%); }
-
-/* клапан: две стороны в 3D, поворот вокруг верхнего края */
-.env__flap {
-  position: absolute;
-  inset: 0;
-  transform-origin: 50% 0;
-  transform-style: preserve-3d;
-  pointer-events: none;
-}
-.env__flap-front, .env__shade, .seal { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.env__shade {           /* лицо клапана темнеет, когда встаёт ребром к свету */
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(70, 52, 24, .08), rgba(70, 52, 24, .38));
-  -webkit-mask: url(assets/img/env-flap.webp) 0 0 / 100% 100% no-repeat;
-  mask: url(assets/img/env-flap.webp) 0 0 / 100% 100% no-repeat;
-  opacity: 0;
-}
-/* изнанка клапана: подкладка с золотой кромкой по краю; зеркально – после поворота совпадёт с формой */
-.env__flap-back {
-  position: absolute;
-  inset: 0;
-  clip-path: polygon(0 100%, 100% 100%, 100% 91.23%, 48.42% 49.28%, 0 89.86%);
-  background: linear-gradient(100deg, #a9782d, #e3c487 32%, #c39a4f 58%, #a3732a);
-  border-radius: 0 0 7% 7% / 0 0 3.9% 3.9%;   /* углы – как у конверта (после поворота они сверху) */
-  transform: rotateX(180deg);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-.env__flap-back::before { content: ""; position: absolute; inset: 0; clip-path: polygon(0 100%, 100% 100%, 100% 92.1%, 48.42% 50.3%, 0 90.7%); }
-.env__back-shade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(60, 44, 14, .32), rgba(60, 44, 14, .06) 60%); }
-
-/* печать */
+/* печать: кнопка – прозрачная, точно над печатью в первом кадре анимации */
 .seal {
   position: absolute;
-  left: 48.42%;
-  top: 47.2%;
-  width: 27%;
-  aspect-ratio: 560 / 588;
+  left: 48.8%;
+  top: 48.5%;
+  inline-size: 27.5%;
+  aspect-ratio: 297 / 308;
   padding: 0;
   border: 0;
   border-radius: 50%;
   background: none;
-  translate: -50% -50% 1px;   /* чуть над клапаном – двигается с ним как одно целое */
+  translate: -50% -50%;
   cursor: pointer;
-  pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
-  transition: transform .16s var(--ease-out);
 }
-.seal:active { transform: scale(.96); }
 .seal:focus-visible { outline: 2px solid #8a6a1f; outline-offset: 6px; }
-@media (hover: hover) and (pointer: fine) {
-  .seal { transition: transform .4s var(--ease-out); }
-  .intro:hover .seal { transform: scale(1.03); }
-  .seal:active { transform: scale(.96); transition-duration: .16s; }
-}
-.seal__img, .seal__half img { width: 100%; height: 100%; max-width: none; filter: drop-shadow(0 8px 10px rgba(60, 40, 5, .35)); }
-.env__shards { position: absolute; z-index: 6; left: 48.42%; top: 47.2%; width: 27%; aspect-ratio: 560 / 588; translate: -50% -50%; pointer-events: none; }
-.seal__half { position: absolute; inset: 0; opacity: 0; }
-.seal__half img { position: absolute; inset: 0; }
-/* половинки – по линии трещины */
-.seal__half--l { clip-path: polygon(-10% -10%, 52% -10%, 52% 3%, 47% 20%, 55% 35%, 46% 51%, 54% 66%, 47% 82%, 51% 97%, 51% 110%, -10% 110%); }
-.seal__half--r { clip-path: polygon(52% -10%, 110% -10%, 110% 110%, 51% 110%, 51% 97%, 47% 82%, 54% 66%, 46% 51%, 55% 35%, 47% 20%, 52% 3%); }
-.seal__crack { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; overflow: visible; pointer-events: none; }
-.seal__crack path { fill: none; stroke: rgba(74, 44, 6, .75); stroke-width: 1.6; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; vector-effect: non-scaling-stroke; }
-
-/* планшеты, ноутбуки, 1920 × 1080: конверт целиком, на фоне той же шторы, что у сайта. Телефоны – на весь экран */
-@media (min-aspect-ratio: 2 / 3) {
-  .env__card { --env-h: 78svh; top: 56%; width: calc(var(--env-h) * .5609); }
-  .env__body { filter: drop-shadow(0 3svh 4svh rgba(60, 48, 18, .28)); }
-}
+.intro.is-open .seal { visibility: hidden; }
 
 /* появление: только прозрачность – без масштаба и размытия */
-.js .intro .env__card { opacity: 0; }
-.js .intro .seal { opacity: 0; }
-.intro.is-ready .env__card { opacity: 1; transition: opacity .9s ease; }
-.intro.is-ready .seal { opacity: 1; transition: opacity .7s ease .5s, transform .16s var(--ease-out); }
+.js .intro .intro__box { opacity: 0; }
+.intro.is-ready .intro__box { opacity: 1; transition: opacity .9s ease; }
 
 /* =========================================================
    Обложка: присланное фото слоями – фон без сердца, сердце, имена и дата.
@@ -388,9 +264,10 @@ main {
   }
 }
 
-/* ---------- Рамки, растущие под текст: «Приглашение» и «Дресс-код» ----------
-   Рамка – border-image подложки: верх и низ – как на картинке, полоса с ровными планками между ними
-   тянется по высоте, когда текст длиннее (на телефоне шрифт не мельче 15 px). Размеры – от ширины рамки (cqi);
+/* ---------- Рамки-подложки: «Приглашение» и «Дресс-код» ----------
+   «Приглашение» растёт под текст: border-image – верх и низ как на картинке, полоса с ровными планками между ними
+   тянется по высоте, когда текст длиннее (на телефоне шрифт не мельче 15 px). «Дресс-код» – присланная рамка
+   как есть, без растяжения. Размеры – от ширины рамки (cqi);
    --cut-t / --cut-b – высота верха и низа в пикселях картинки, --pad – поле для текста. */
 .panel {
   position: relative;
@@ -400,7 +277,7 @@ main {
   container-type: inline-size;
   color: var(--olive-text);
 }
-.panel::before, .panel--dress::after {
+.panel::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -412,11 +289,9 @@ main {
   border-image-repeat: stretch;
   filter: drop-shadow(0 22px 30px rgba(60, 62, 40, .16));
 }
-/* у «Дресс-кода» ровной полосы на всю ширину нет (левый букет спускается ниже, чем начинается правый):
-   левая и правая половины – одна и та же картинка, каждая тянется по своей полосе; шов по середине бумаги,
-   половины заходят друг на друга на 3 px */
-.panel--dress::before { clip-path: inset(-10% calc(50% - 3px) -10% -10%); }
-.panel--dress::after { --cut-t: 528; --cut-b: 864; clip-path: inset(-10% -10% -10% calc(50% - 3px)); }
+/* «Дресс-код»: присланная рамка целиком, ровно в её пропорциях – высота панели по картинке, текст ужат под поле */
+.panel--dress::before { border-image: none; background: var(--frame) 0 0 / 100% 100% no-repeat; }
+.panel--dress .panel__body { block-size: calc(100cqi * var(--frame-h) / var(--frame-w)); justify-content: center; }
 .panel__body {
   display: flex;
   flex-direction: column;
@@ -425,7 +300,7 @@ main {
   padding: var(--pad);
 }
 .panel--invite { --frame: url(assets/img/frame-invite.webp); --frame-w: 942; --frame-h: 1533; --cut-t: 1020; --cut-b: 423; --pad: 50.5cqi 13cqi 14.5cqi; }
-.panel--dress { --frame: url(assets/img/frame-dress.webp); --frame-w: 869; --frame-h: 1790; --cut-t: 970; --cut-b: 237; --pad: 45cqi 16cqi 17.6cqi 20cqi; }
+.panel--dress { --frame: url(assets/img/frame-dress.webp); --frame-w: 835; --frame-h: 1486; --pad: 24.4cqi 18cqi 25.6cqi; }   /* сверху и снизу – цветки рамки; по бокам поровну – всё по центру поля */
 
 .panel .title { font-size: 11cqi; line-height: .95; color: inherit; }
 .panel .text { max-width: none; margin: 2.2cqi 0 0; font-weight: 600; font-size: max(15px, 3.3cqi); line-height: 1.12; text-wrap: balance; }
@@ -502,7 +377,7 @@ main {
 /* ---------- Адрес: текст и орнаменты – как на образце ---------- */
 .oval__text {
   position: absolute;
-  inset: 24% 17% 22%;   /* поле рамки: x 18–82 %, y 20–80 % */
+  inset: 24.4% 17% 19.3%;   /* поле рамки: x 17–83 %, y 20–82 % */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -574,70 +449,67 @@ main {
 .prog span { font-size: 3.95cqi; line-height: 1.2; }
 
 
-/* ---------- Дресс-код · Фото · Анкета: как на образце ---------- */
-.panel--dress .title { font-size: 11.4cqi; }
-.panel--dress .title + .text { margin-top: 1cqi; }
-.panel--dress .text { font-size: max(15px, 3.15cqi); }
-.panel--dress .text + .text { margin-top: 2.6cqi; }
-.title--dress { font-size: 13.4cqi !important; translate: 12cqi 0; margin-bottom: 1.6cqi; }
-/* абзацы обходят букеты: дресс-код – правее (букет слева сверху), фото и анкета – левее (букет справа снизу) */
-.panel .text--right { margin-inline-start: 13cqi; }
-.panel .text--left { margin-inline-end: 10cqi; }
-@container (min-width: 520px) {
-  .panel .text--right { margin-inline-start: 7cqi; }
-  .panel .text--left { margin-inline-end: 0; }
-}
-.panel--dress .divider { --divider: 64cqi; block-size: 4.4cqi; margin: 2.2cqi 0 1.2cqi; translate: -1cqi 0; }
-.text--lily { position: relative; }
-.lily { display: block; inline-size: 13cqi; margin: 1cqi auto 0; }
-@container (min-width: 520px) {
-  .lily { position: absolute; inline-size: 16.2cqi; margin: 0; inset-inline-start: calc(100% - 2.4cqi); inset-block-start: -1.4cqi; }
-}
+/* ---------- Дресс-код · Фото · Анкета: как на образце ----------
+   Рамка не растягивается, поэтому всё – только от ширины рамки (cqi), без нижних пределов в px:
+   на любом экране текст лежит в поле одинаково, строки – как на образце. */
+.panel--dress .title { font-size: 9.6cqi; }
+.panel--dress .title + .text { margin-top: .8cqi; }
+.panel--dress .text { font-size: 2.65cqi; text-wrap: nowrap; }
+.panel--dress .br { display: inline; }
+.panel--dress .text + .text { margin-top: 1.8cqi; }
+.title--dress { font-size: 11.2cqi !important; margin-bottom: 1.3cqi; }
+.panel--dress .divider { block-size: 3.7cqi; margin: 2cqi 0 1.2cqi; }
+/* лилия с образца – в середине первого разделителя; линии той же длины, что у звёздочки */
+.panel--dress .divider--lily { --divider: 38cqi; block-size: 8cqi; margin: 1.4cqi 0 .6cqi; }
+.divider--lily::before, .divider--lily::after { inline-size: calc(50% - 6.4cqi); }
+.divider--lily b { aspect-ratio: 141 / 114; background-image: url(assets/img/orn-lily.webp); }
 
-/* анкета: поле, кружки и кнопка – как нарисованы на образце, настоящие */
+/* анкета: поле, кружки и кнопка – как нарисованы на образце, настоящие; всё по центру, как текст над ними */
 .rsvp {
-  align-self: stretch;
+  align-self: center;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  margin: 2.6cqi 0 0 -1cqi;   /* левый край – как на образце */
-  text-align: start;
-}
-.rsvp__label { padding: 0; font-weight: 600; font-size: max(15px, 3.05cqi); line-height: 1.15; color: inherit; }
-.rsvp__field {
+  align-items: center;
   inline-size: 96%;
-  block-size: max(42px, 5.4cqi);
-  margin-top: .9cqi;
-  padding: 0 2.4cqi;
-  border: max(1.5px, .24cqi) solid var(--gold);
+  margin: 2.4cqi 0 0;
+  text-align: center;
+}
+.rsvp__label { padding: 0; font-weight: 600; font-size: 2.6cqi; line-height: 1.15; color: inherit; }
+.rsvp__field {
+  inline-size: 82%;
+  block-size: max(24px, 4.6cqi);   /* шрифт поля – не меньше 16 px */
+  margin-top: .7cqi;
+  padding: 0 2cqi;
+  border: max(1px, .22cqi) solid var(--gold);
   border-radius: 999px;
   background: rgba(255, 253, 246, .45);
   font-family: var(--serif);
   font-weight: 500;
-  font-size: max(16px, 2.9cqi);   /* не меньше 16 px: телефон не увеличивает страницу при вводе */
+  font-size: max(16px, 2.5cqi);   /* не меньше 16 px: телефон не увеличивает страницу при вводе */
   color: #3f3c22;
   outline: none;
   transition: box-shadow .2s ease, border-color .2s ease;
 }
 .rsvp__field:focus-visible { border-color: #a97a2f; box-shadow: 0 0 0 3px rgba(199, 155, 69, .28); }
-.rsvp__choice { margin: 2.4cqi 0 0; padding: 0; border: 0; min-inline-size: 0; }
-.rsvp__choice legend { max-inline-size: 56cqi; margin-bottom: .6cqi; }
+.rsvp__choice { margin: 2cqi 0 0; padding: 0; border: 0; min-inline-size: 0; }
+.rsvp__choice legend { margin-inline: auto; margin-bottom: .5cqi; white-space: nowrap; }   /* вопрос – одной строкой */
+.rsvp__opts { display: flex; justify-content: center; gap: 4.4cqi; }   /* варианты – рядом, по центру */
 .rsvp__opt {
   display: flex;
   align-items: center;
-  gap: 2.6cqi;
-  min-block-size: max(40px, 5.3cqi);
+  gap: 2.2cqi;
+  min-block-size: 4.5cqi;
   font-weight: 600;
-  font-size: max(15px, 3.1cqi);
+  font-size: 2.65cqi;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 .rsvp__opt input {
   flex: none;
-  inline-size: max(22px, 4.4cqi);
+  inline-size: 3.75cqi;
   aspect-ratio: 1;
   margin: 0;
-  border: max(2px, .36cqi) solid #b8853a;
+  border: max(1.5px, .31cqi) solid #b8853a;
   border-radius: 50%;
   appearance: none;
   -webkit-appearance: none;
@@ -648,15 +520,16 @@ main {
 .rsvp__opt input:checked { background-size: 100% 100%; }
 .rsvp__opt input:focus-visible { outline: 2px solid var(--olive); outline-offset: 3px; }
 .rsvp__send {
-  inline-size: max(150px, 32.6cqi);
-  block-size: max(46px, 7.4cqi);
-  margin: 2.6cqi 0 0 10.8cqi;
+  inline-size: 27.8cqi;
+  block-size: 6.3cqi;
+  align-self: center;
+  margin: 2.1cqi 0 0;
   padding: 0;
-  border: max(2px, .32cqi) solid #c9a35a;
+  border: max(1px, .28cqi) solid #c9a35a;
   border-radius: 999px;
   background: linear-gradient(#6a6e44, #565a32);
   color: #fff;
-  font-size: max(17px, 3.3cqi);
+  font-size: 2.85cqi;
   font-weight: 500;
   letter-spacing: .02em;
   box-shadow: 0 .9cqi 1.8cqi rgba(60, 50, 20, .28), inset 0 1px 0 rgba(255, 255, 255, .2);
@@ -859,6 +732,7 @@ main {
 .js .divider::after { clip-path: inset(0 100% 0 0); }
 .js .divider.is-in::before, .js .divider.is-in::after { clip-path: inset(0); transition: clip-path 1.3s var(--ease-out) .35s; }
 .js .divider b { opacity: 0; scale: .2; rotate: -90deg; }
+.js .divider--lily b { rotate: -12deg; }
 .js .divider.is-in b { opacity: 1; scale: 1; rotate: 0deg; transition: opacity .6s ease .1s, scale 1s var(--ease-settle) .1s, rotate 1.2s var(--ease-out) .1s; }
 .js .rule::before { clip-path: inset(0 50%); }   /* маска – на слое: скрытый целиком элемент наблюдатель прокрутки не замечает */
 .js .rule.is-in::before { clip-path: inset(0); transition: clip-path 1.5s var(--ease-out) .2s; }

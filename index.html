@@ -8,10 +8,10 @@
   <meta property="og:title" content="Фёдор и Ирина – 21.07.2027">
   <meta property="og:description" content="Приглашаем вас на нашу свадьбу">
   <meta name="theme-color" content="#23270b">
-  <link rel="preload" href="assets/img/env-body.webp" as="image">
-  <link rel="preload" href="assets/img/env-flap.webp" as="image">
-  <link rel="preload" href="assets/img/env-seal.webp" as="image">
-  <link rel="preload" href="assets/img/env-inside.webp" as="image">
+  <link rel="preload" href="assets/envelope/body.jpg" as="image">
+  <link rel="preload" href="assets/envelope/pocket.webp" as="image">
+  <link rel="preload" href="assets/envelope/flap.webp" as="image">
+  <link rel="preload" href="assets/envelope/seal.webp" as="image">
   <link rel="preload" href="assets/img/hero-bg.jpg" as="image" media="(max-aspect-ratio: 7/10)">
   <link rel="preload" as="image" imagesrcset="assets/img/hero-wide.jpg 1920w, assets/img/hero-wide-2880.jpg 2880w" imagesizes="(min-aspect-ratio: 16/9) 100vw, 178vh" media="(min-aspect-ratio: 7/10)">
   <link rel="preload" href="assets/img/hero-heart.webp" as="image">
@@ -25,42 +25,12 @@
   <!-- фон: одна штора, медленно едет при прокрутке -->
   <div class="backdrop" aria-hidden="true"><img src="assets/img/bg-sections.webp" alt="" width="1024" height="1536" decoding="async"></div>
 
-  <!-- ============ ЛИЦО ОТКРЫТКИ: КОНВЕРТ НА ВЕСЬ ЭКРАН ============ -->
+  <!-- ============ ЛИЦО ОТКРЫТКИ: КОНВЕРТ – присланная анимация открытия (Lottie) ============ -->
   <div class="intro" id="intro">
-    <div class="envelope">
-      <div class="env__card">
-        <img class="env__body" src="assets/img/env-body.webp" alt="" width="857" height="1528">
-        <!-- внутренняя сторона конверта: подкладка и тень в глубине кармана -->
-        <div class="env__inside" aria-hidden="true"><span class="env__cast"></span></div>
-        <!-- приглашение внутри: видно в вырезе, после открытия выдвигается -->
-        <div class="env__letter" aria-hidden="true">
-          <div class="env__note">
-            <span class="env__note-kicker">Wedding Day</span>
-            <span class="env__note-names">Фёдор &amp; Ирина</span>
-            <i class="env__note-rule"></i>
-            <span class="env__note-date">21.07.2027</span>
-            <img class="env__note-lily" src="assets/img/orn-lily.webp" alt="" width="141" height="114">
-          </div>
-        </div>
-        <!-- передняя стенка кармана поверх письма -->
-        <div class="env__pocket" aria-hidden="true"><img src="assets/img/env-body.webp" alt="" width="857" height="1528"></div>
-        <!-- клапан на петле: лицевая сторона с печатью, изнанка с подкладкой -->
-        <div class="env__flap">
-          <img class="env__flap-front" src="assets/img/env-flap.webp" alt="" width="857" height="1528">
-          <span class="env__shade" aria-hidden="true"></span>
-          <div class="env__flap-back" aria-hidden="true"><span class="env__back-shade"></span></div>
-          <!-- печать: по нажатию трескается и распадается на две половинки (они – отдельным слоем ниже) -->
-          <button class="seal" id="intro-open" type="button" aria-label="Открыть приглашение">
-            <img class="seal__img" src="assets/img/env-seal.webp" alt="" width="560" height="588">
-            <svg class="seal__crack" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M52 3 L47 20 L55 35 L46 51 L54 66 L47 82 L51 97"/></svg>
-          </button>
-        </div>
-        <!-- половинки расколотой печати: над конвертом, падают вниз, а клапан уходит вверх -->
-        <div class="env__shards" aria-hidden="true">
-          <span class="seal__half seal__half--l"><img src="assets/img/env-seal.webp" alt="" width="560" height="588"></span>
-          <span class="seal__half seal__half--r"><img src="assets/img/env-seal.webp" alt="" width="560" height="588"></span>
-        </div>
-      </div>
+    <div class="intro__box">
+      <div class="intro__anim" id="intro-anim" aria-hidden="true"></div>
+      <!-- печать нарисована в анимации; кнопка – прозрачная, точно над ней -->
+      <button class="seal" id="intro-open" type="button" aria-label="Открыть приглашение"></button>
     </div>
   </div>
 
@@ -117,7 +87,7 @@
     <section class="sec sec--place" id="place">
       <div class="col">
         <div class="oval" data-reveal="frame">
-          <img class="oval__img" src="assets/img/frame-place.webp" alt="" width="1024" height="1536" loading="lazy" decoding="async">
+          <img class="oval__img" src="assets/img/frame-place.webp" alt="" width="1060" height="1445" loading="lazy" decoding="async">
           <div class="oval__text">
             <h2 class="title" data-write>Адрес</h2>
             <i class="rule" data-inview aria-hidden="true"></i>
@@ -149,21 +119,21 @@
       </div>
     </section>
 
-    <!-- ============ ДРЕСС-КОД · ФОТО · АНКЕТА: присланная рамка – фон, текст и анкета живые ============ -->
+    <!-- ============ ДРЕСС-КОД · ФОТО · АНКЕТА: присланная жемчужная рамка как есть – фон, текст и анкета живые ============ -->
     <section class="sec sec--panel" id="dress">
       <div class="col">
         <div class="panel panel--dress" data-reveal="frame">
           <div class="panel__body">
             <h2 class="title title--dress" data-write>Дресс-код</h2>
-            <p class="text text--right" data-reveal>Мы не хотим ограничивать вас в выборе<br class="br"> нарядов, ведь самое главное для нас –<br class="br"> ваше присутствие и хорошее настроение!</p>
-            <p class="text text--right" data-reveal>Однако будем рады, если в этот особенный<br class="br"> день вы отдадите предпочтение светлым,<br class="br"> нежным и приглушённым оттенкам,<br class="br"> избегая слишком ярких и мрачных цветов.</p>
-            <p class="text text--right text--lily" data-reveal>А белый цвет мы с любовью просим<br class="br"> оставить для невесты<img class="lily" data-bloom src="assets/img/orn-lily.webp" alt="" width="141" height="114" loading="lazy" decoding="async"></p>
-            <i class="divider" data-inview aria-hidden="true"><b></b></i>
+            <p class="text" data-reveal>Мы не хотим ограничивать вас в выборе<br class="br"> нарядов, ведь самое главное для нас –<br class="br"> ваше присутствие и хорошее настроение!</p>
+            <p class="text" data-reveal>Однако будем рады, если в этот особенный<br class="br"> день вы отдадите предпочтение светлым,<br class="br"> нежным и приглушённым оттенкам,<br class="br"> избегая слишком ярких и мрачных цветов.</p>
+            <p class="text" data-reveal>А белый цвет мы с любовью просим<br class="br"> оставить для невесты</p>
+            <i class="divider divider--lily" data-inview aria-hidden="true"><b></b></i>
             <h2 class="title" id="photo" data-write>Фото</h2>
-            <p class="text text--left" data-reveal>После праздника, когда фото будут готовы,<br class="br"> здесь появится ссылка на свадебный альбом!</p>
+            <p class="text" data-reveal>После праздника, когда фото будут готовы,<br class="br"> здесь появится ссылка на свадебный альбом!</p>
             <i class="divider" data-inview aria-hidden="true"><b></b></i>
             <h2 class="title" id="rsvp" data-write>Анкета</h2>
-            <p class="text text--left" data-reveal>Пожалуйста, подтвердите присутствие<br class="br"> до 1 июня 2027 года, чтобы мы смогли<br class="br"> спланировать всё наилучшим образом!</p>
+            <p class="text" data-reveal>Пожалуйста, подтвердите присутствие<br class="br"> до 1 июня 2027 года, чтобы мы смогли<br class="br"> спланировать всё наилучшим образом!</p>
             <form class="rsvp" id="rsvp-form"
                   action="https://docs.google.com/forms/d/e/1FAIpQLSe4BrtPvw5_LbyWcVfD28BD3UFVkCT_nhqsxXx3hOm8lzBYHQ/formResponse"
                   method="post" target="_blank" novalidate>
@@ -171,8 +141,10 @@
               <input class="rsvp__field" id="rsvp-name" type="text" name="entry.225506798" autocomplete="name" required data-reveal>
               <fieldset class="rsvp__choice" data-reveal>
                 <legend class="rsvp__label">Сможете ли вы присутствовать на&nbsp;нашем празднике?</legend>
-                <label class="rsvp__opt"><input type="radio" name="entry.87327526" value="С радостью буду!" required><span>С радостью буду!</span></label>
-                <label class="rsvp__opt"><input type="radio" name="entry.87327526" value="К сожалению, не смогу"><span>К сожалению, не смогу</span></label>
+                <div class="rsvp__opts">
+                  <label class="rsvp__opt"><input type="radio" name="entry.87327526" value="С радостью буду!" required><span>С радостью буду!</span></label>
+                  <label class="rsvp__opt"><input type="radio" name="entry.87327526" value="К сожалению, не смогу"><span>К сожалению, не смогу</span></label>
+                </div>
               </fieldset>
               <button class="rsvp__send" type="submit" data-reveal><span>Отправить</span></button>
             </form>
@@ -227,6 +199,8 @@
   </button>
   <audio id="bg-music" src="assets/music.mp3" preload="none" loop></audio>
 
+  <script src="assets/envelope/lottie_light.min.js"></script>
+  <script src="assets/envelope/envelope.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

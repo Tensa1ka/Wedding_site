@@ -150,42 +150,49 @@ def heart_wreath():
     return save('heart-wreath', rgb, alpha)
 
 
-# ---------- третий набор: конверт во весь экран, фоны, рамки с текстом-образцом ----------
+# ---------- третий набор: анимация открытия конверта, фоны, рамки с текстом-образцом ----------
 
-ENV_FLAP = [(0, 0), (857, 0), (857, 134), (415, 775), (0, 155)]   # верхний клапан в кадре конверта
-
-
-def poly_mask(shape, pts):
-    from PIL import ImageDraw
-    im = Image.new('L', (shape[1], shape[0]), 0)
-    ImageDraw.Draw(im).polygon(pts, fill=255)
-    return np.asarray(im) > 127
+# Слои присланной анимации (Lottie, envelope-opening.json): картинка → файл в assets/envelope
+ENV_FILES = {'Печать': 'seal', 'Тень на клапане': 'flap-shade', 'Клапан': 'flap', 'Корпус': 'body',
+             'Тень кармана': 'pocket-shadow', 'Письмо': 'letter', 'Письмо в кармане': 'letter', 'Тень на изнанке клапана': 'flap-back-shade',
+             'Изнанка клапана': 'flap-back', 'Печать у кончика клапана': 'seal-back', 'Тень от клапана': 'flap-cast',
+             'Подкладка': 'lining', 'Тень конверта': 'envelope-shadow', 'Карман': 'pocket',
+             'Тень клапана на кармане': 'flap-cast-pocket'}
 
 
-def envelope_full():
-    """Конверт: корпус (под клапаном – внутренняя сторона) и верхний клапан отдельно,
-    оба в одном кадре – на сайте клапан поворачивается на петле у верхнего края."""
-    a = load_rgba('envelope2.png')[86:1614, 45:902]
-    rgb, alpha = a[..., :3], a[..., 3] / 255
-    H, W = alpha.shape
-    flap = poly_mask((H, W), ENV_FLAP)
-    px = rgb[(alpha > .99) & ~flap][::7]
-    paper = np.median(px[px.mean(1) > np.percentile(px.mean(1), 70)], 0)   # сама бумага, без узора
-    # внутренняя сторона: бумага чуть темнее, к верхнему краю – мягкая тень кармана
-    yy = np.mgrid[:H, :W][0]
-    inside = paper * np.array([.97, .96, .95]) * (1 - .1 * np.clip(1 - yy / (H * .5), 0, 1))[..., None]
-    rng = np.random.default_rng(9)
-    inside = inside + ndi.gaussian_filter(rng.normal(0, 2, (H, W)), .9)[..., None]
-    cover = ndi.binary_dilation(flap, iterations=7)          # с запасом: тень клапана тоже уходит
-    soft = ndi.gaussian_filter(cover.astype(float), 1.2)[..., None]
-    body = rgb * (1 - soft) + inside * soft
-    save('env-body', body, alpha, quality=86)
-    fa = ndi.gaussian_filter(flap.astype(float), .8) * alpha
-    save_full('env-flap', rgb, fa)
-    s = load_rgba('seal2.png')[102:1141, 134:1124]
-    rgb_s, a_s = shrink(s[..., :3], s[..., 3] / 255, 560)
-    save('env-seal', rgb_s, a_s)
-    print('paper', paper.round())
+def envelope_anim():
+    """Открытие конверта – присланная анимация Lottie как есть: кадры, маски и тайминг не меняются.
+    Встроенные картинки вынесены файлами (5,8 МБ → ≈ 1,4 МБ): JPEG – как прислали, PNG – webp
+    без потерь (письмо, печать, тени), а крупные клапан и карман – с качеством 92 (без потерь они в 4 раза тяжелее). Данные – assets/envelope/envelope.js
+    (скрипт, а не JSON: сайт открывается и двойным щелчком по index.html)."""
+    import base64
+    import io
+    import json
+    out = os.path.join(HERE, '..', 'assets', 'envelope')
+    d = json.load(open(os.path.join(SRC, 'envelope-opening.json'), encoding='utf-8'))
+    names = {l['refId']: ENV_FILES[l['nm']] for l in d['layers'] if l.get('refId')}
+    for a in d['assets']:
+        head, b64 = a['p'].split(',', 1)
+        raw = base64.b64decode(b64)
+        name = names[a['id']]
+        if 'jpeg' in head:
+            fn = name + '.jpg'
+            open(os.path.join(out, fn), 'wb').write(raw)
+        else:
+            im = Image.open(io.BytesIO(raw)).convert('RGBA')
+            lossless, lossy = io.BytesIO(), io.BytesIO()
+            im.save(lossless, 'WEBP', lossless=True, method=6)
+            im.save(lossy, 'WEBP', quality=92, method=6, alpha_quality=95)
+            best = lossless if lossless.tell() <= lossy.tell() + 50 * 1024 else lossy
+            fn = name + '.webp'
+            open(os.path.join(out, fn), 'wb').write(best.getvalue())
+        a.update(u='assets/envelope/', p=fn, e=0)
+        print(f'{fn} {a["w"]}x{a["h"]} {os.path.getsize(os.path.join(out, fn)) // 1024} KB')
+    js = 'window.ENVELOPE = ' + json.dumps(d, ensure_ascii=False, separators=(',', ':')) + ';\n'
+    open(os.path.join(out, 'envelope.js'), 'w', encoding='utf-8').write(
+        '/* Открытие конверта – присланная анимация Lottie (tools/src/envelope-opening.json), картинки – рядом */\n' + js)
+    print(f'envelope.js {len(js) // 1024} KB; кадров {d["op"]} при {d["fr"]} к/с; метки:',
+          '; '.join(f'{m["tm"]} {m["cm"]}' for m in d.get('markers', [])))
 
 
 def save_full(name, rgb, alpha, quality=86):
@@ -204,21 +211,6 @@ def flowers_bottom():
     a = load_rgba('flowers-bottom.png')
     rgb, alpha = shrink(a[..., :3], a[..., 3] / 255, 1600)
     save('flowers-bottom', rgb, alpha)
-
-
-def env_inside():
-    """Подкладка конверта (внутренняя сторона и изнанка клапана): та же бумага, без узора."""
-    a = load_rgba('envelope2.png')[86:1614, 45:902]
-    rgb, alpha = a[..., :3], a[..., 3] / 255
-    H, W = alpha.shape
-    flap = poly_mask((H, W), ENV_FLAP)
-    px = rgb[(alpha > .99) & ~flap][::7]
-    paper = np.median(px[px.mean(1) > np.percentile(px.mean(1), 70)], 0)
-    rng = np.random.default_rng(12)
-    fibre = ndi.gaussian_filter(rng.normal(0, 1, (H, W)), (6, 1.2))          # продольные волокна бумаги
-    fibre = fibre / fibre.std() * 2.2 + ndi.gaussian_filter(rng.normal(0, 1.4, (H, W)), .8)
-    lining = paper * np.array([.97, .96, .94]) + fibre[..., None]
-    save_full('env-inside', lining, np.ones((H, W)))
 
 
 # ---------- четвёртый набор: обложка под 1920 × 1080 и новые рамки ----------
@@ -421,11 +413,10 @@ def ornament(name, rgb, clean, box, clear=None):
 
 
 # ---------- пятый набор: присланные рамки без текста (текст – на сайте), орнаменты – с образцов ----------
-# frame-1.webp – слои SVG «Рамка 1», сведённые без изменений; frame-dress.jpg – присланная рамка «Дресс-код»;
-# frame-pearl.webp – «Оригинальная жемчужно-золотая рамка» из Figma;
+# frame-1.webp – слои SVG «Рамка 1», сведённые без изменений; frame-dress-pearl.webp и frame-place-pearl.webp –
+# присланные жемчужные рамки «Дресс-код» и «Адрес» (фон уже прозрачный) – берутся как есть;
 # sample-*.jpg / sample-place.webp – образцы из архива «образец страниц сайта» (с них – лилия и линии «Адреса»).
-# На сайте прямоугольные рамки тянутся по высоте под текст: растягивается полоса с ровными планками
-# (у «Рамки 1» – строки 1020–1110; у «Дресс-кода» – своя полоса у левой и правой половины, см. frame_dress).
+# На сайте «Рамка 1» тянется по высоте под текст: растягивается полоса с ровными планками (строки 1020–1110).
 
 def smooth_fill(rgb, known, sigma):
     """Плавная заливка по известным пикселям (взвешенное гауссово среднее);
@@ -453,7 +444,7 @@ def paper_tone(img, region, k=4, size=9, tol=8):
     return smooth_fill(img, known, 6)
 
 
-def cut_black(rgb, band=1):
+def cut_black(rgb, band=1, min_hole=6):
     """Фон – чёрный: прозрачный, вместе с закрытыми просветами и тёмной каймой у края;
     край силуэта – доля яркости от ближайшего пикселя изнутри (сглаживание без чёрного ореола).
     band > 1 – ещё и тусклое серое свечение на band пикселей от края (у мелких белых цветов) становится
@@ -462,33 +453,13 @@ def cut_black(rgb, band=1):
     dark = mx <= 10
     lab, n = ndi.label(dark)
     keep = np.zeros(n + 1, bool)
-    keep[1:] = ndi.sum(dark, lab, range(1, n + 1)) >= 6
+    keep[1:] = ndi.sum(dark, lab, range(1, n + 1)) >= min_hole    # min_hole 1 – и мелкие просветы кружевной сетки
     bg = keep[lab]
     glow = (mx - rgb.min(2) < 18) & (rgb.mean(2) < 150) if band > 1 else np.ones(mx.shape, bool)
     for _ in range(3):
         bg |= ndi.binary_dilation(bg) & (mx < 45) & glow
     fg = ndi.binary_opening(~bg, iterations=1)                 # без одиночных крошек
     return edge_alpha(rgb, fg, lambda P, F: P.sum(2) / np.maximum(F.sum(2), 1), .4, band, glow)
-
-
-def cut_white(rgb, white=254.):
-    """Фон – белый вокруг рамки: прозрачный, вместе с просветами внутри кружева (белые пятна в завитках и между
-    листьями: вокруг них – золото). Блики на жемчуге (вокруг – светлый перламутр) и тонкие блики по краям листьев
-    остаются. Край – доля отличия от белого у ближайшего пикселя изнутри."""
-    lum = rgb.mean(2)
-    cand = (lum >= 240) & (rgb.max(2) - rgb.min(2) <= 6)
-    lab, n = ndi.label(cand)
-    idx = np.arange(1, n + 1)
-    edge = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
-    ring = ndi.grey_dilation(lab, size=5) * (lab == 0)        # соседи каждого пятна
-    dark_ring = ndi.mean(lum, ring, idx) < 220
-    thick = ndi.sum(ndi.binary_erosion(cand), lab, idx) >= 4   # не тонкая линия блика
-    hole = np.zeros(n + 1, bool)
-    hole[1:] = dark_ring & thick
-    hole[edge] = True
-    hole[0] = False
-    fg = ~hole[lab]
-    return edge_alpha(rgb, fg, lambda P, F: (white - P).sum(2) / np.maximum((white - F).sum(2), 1), 0)
 
 
 def edge_alpha(rgb, fg, share, blur, band=1, soft=None):
@@ -500,12 +471,6 @@ def edge_alpha(rgb, fg, share, blur, band=1, soft=None):
     alpha = np.where(core, 1.0, np.where(fg, np.clip(share(rgb, F), 0, 1), 0.0))
     col = np.where(core[..., None], rgb, F)
     return col, ndi.gaussian_filter(alpha, blur) if blur else alpha
-
-
-def resize_rgba(rgb, alpha, size):
-    im = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), alpha * 255]).round().astype(np.uint8), 'RGBA')
-    a = np.asarray(im.convert('RGBa').resize(size, Image.LANCZOS).convert('RGBA')).astype(float)
-    return a[..., :3], a[..., 3] / 255
 
 
 def frame_invite():
@@ -521,38 +486,23 @@ def frame_invite():
     ornament('orn-heart', rgb, clean, (1292, 1378, 388, 492))
 
 
-# поле для текста у прежней рамки «Дресс-код» (в кадре 869 × 1775) и у присланной новой (frame-dress.jpg, 884 × 1780):
-# новая рамка приводится к прежнему полю, поэтому раскладка текста в style.css не меняется
-DRESS_FIELD_OLD = (107, 251, 782, 1654)
-DRESS_FIELD_NEW = (110, 238, 794, 1635)
+def as_sent(name, src):
+    """Присланная рамка как есть: пиксели не меняются, только альфа доведена до 255 (у присланных webp она
+    бывает не выше 254) и пустые прозрачные поля вокруг обрезаны по силуэту. Проценты поля в style.css –
+    от обрезанного кадра."""
+    a = load_rgba(src)
+    return save(name, a[..., :3], np.clip(a[..., 3] / 252, 0, 1), quality=95)
 
 
 def frame_dress():
-    """Рамка «Дресс-код» – присланная frame-dress.jpg: чёрный фон – прозрачный, рамка совмещена с полем прежней
-    (масштаб по ширине −1,3 %, по высоте +0,4 % – на глаз незаметно). Лилия у «оставить для невесты» – с образца.
-    Ровной полосы на всю ширину у рамки нет (левый букет ниже, чем начинается правый): печатает полосы
-    для растяжения левой и правой половин – --cut-* в style.css."""
-    rgb, alpha = cut_black(load('frame-dress.jpg'), band=4)
-    (ox0, oy0, ox1, oy1), (nx0, ny0, nx1, ny1) = DRESS_FIELD_OLD, DRESS_FIELD_NEW
-    sx, sy = (ox1 - ox0) / (nx1 - nx0), (oy1 - oy0) / (ny1 - ny0)
-    tx, ty = ox0 - nx0 * sx, oy0 - ny0 * sy
-    H = max(1775, int(np.ceil(np.where(alpha.max(1) > .03)[0][-1] * sy + ty)) + 3)
-    im = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), alpha * 255]).round().astype(np.uint8), 'RGBA').convert('RGBa')
-    im = im.transform((869, H), Image.AFFINE, (1 / sx, 0, -tx / sx, 0, 1 / sy, -ty / sy), Image.BICUBIC).convert('RGBA')
-    a = np.asarray(im).astype(float)
-    rgb, alpha = a[..., :3], a[..., 3] / 255
-    save_full('frame-dress', rgb, alpha, quality=88)
-    flat = np.dstack([rgb * alpha[..., None], alpha[..., None] * 255])
-    busy = (np.abs(np.diff(flat, axis=0)).max(2) > 10)
-    for side, cols in (('левая', slice(0, 869 // 2)), ('правая', slice(869 // 2, 869))):
-        ys = np.where(busy[300:1650, cols].sum(1) <= 2)[0] + 300
-        runs = np.split(ys, np.where(np.diff(ys) > 1)[0] + 1)
-        r = max(runs, key=len)
-        print(f'  {side} половина тянется: строки {r[0] + 2}–{r[-1] - 2} (--cut-t {r[0] + 2}, --cut-b {H - r[-1] + 2}), кадр {H}')
+    """Рамка «Дресс-код» – присланная жемчужная frame-dress-pearl.webp как есть (на сайте не растягивается).
+    Лилия для разделителя под дресс-кодом – с образца, бумага образца приведена к тону поля рамки."""
+    im = as_sent('frame-dress', 'frame-dress-pearl.webp')
+    tone = np.median(np.asarray(im.convert('RGB'))[500:1000, 250:600].reshape(-1, 3), 0)
     y0, y1, x0, x1 = 812, 930, 650, 798
     s = load('sample-dress.jpg')[y0:y1, x0:x1]
     paper = np.median(s.reshape(-1, 3), 0)
-    s = s * np.median(rgb[y0:y1, x0:x1].reshape(-1, 3), 0) / paper     # бумага образца → тон бумаги рамки
+    s = s * tone / paper                                       # бумага образца → тон бумаги рамки
     corner = np.zeros(s.shape[:2], bool)
     corner[:858 - y0, :688 - x0] = True                        # слева сверху – конец строки «просим»: стереть
     s[ndi.binary_dilation(corner & (s.mean(2) < 200), iterations=2) & corner] = np.median(s.reshape(-1, 3), 0)
@@ -565,10 +515,9 @@ def frame_dress():
 
 
 def frame_place():
-    """Оригинальная жемчужная рамка (белый фон – прозрачный) в кадре образца 1024 × 1536, без текста.
-    Линии с лилией и подвеска под «Открыть на карте» – с образца, отдельными картинками."""
-    rgb, alpha = resize_rgba(*cut_white(load('frame-pearl.webp')), (1024, 1536))
-    save_full('frame-place', rgb, alpha, quality=88)
+    """«Адрес» – присланная жемчужная овальная рамка frame-place-pearl.webp как есть.
+    Линии с лилией и подвеска под «Открыть на карте» – с образца."""
+    as_sent('frame-place', 'frame-place-pearl.webp')
     s = load_rgba('sample-place.webp')[..., :3]
     yy, xx = np.mgrid[:1536, :1024]
     clean = paper_tone(s, ((xx - 513) / 330) ** 2 + ((yy - 765) / 460) ** 2 < 1)
@@ -577,7 +526,7 @@ def frame_place():
     ornament('orn-pendant', s, clean, (1095, 1129, 474, 554))   # подвеска под «Открыть на карте» (линия – на сайте)
 
 
-ALL = {f.__name__: f for f in (heart_wreath, envelope_full, backgrounds, flowers_bottom, env_inside, hero,
+ALL = {f.__name__: f for f in (heart_wreath, envelope_anim, backgrounds, flowers_bottom, hero,
                                frame_program, frame_invite, frame_dress, frame_place)}
 if __name__ == '__main__':
     for n in sys.argv[1:] or ALL:
