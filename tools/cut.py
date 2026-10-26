@@ -150,42 +150,49 @@ def heart_wreath():
     return save('heart-wreath', rgb, alpha)
 
 
-# ---------- третий набор: конверт во весь экран, фоны, рамки с текстом-образцом ----------
+# ---------- третий набор: анимация открытия конверта, фоны, рамки с текстом-образцом ----------
 
-ENV_FLAP = [(0, 0), (857, 0), (857, 134), (415, 775), (0, 155)]   # верхний клапан в кадре конверта
-
-
-def poly_mask(shape, pts):
-    from PIL import ImageDraw
-    im = Image.new('L', (shape[1], shape[0]), 0)
-    ImageDraw.Draw(im).polygon(pts, fill=255)
-    return np.asarray(im) > 127
+# Слои присланной анимации (Lottie, envelope-opening.json): картинка → файл в assets/envelope
+ENV_FILES = {'Печать': 'seal', 'Тень на клапане': 'flap-shade', 'Клапан': 'flap', 'Корпус': 'body',
+             'Тень кармана': 'pocket-shadow', 'Письмо': 'letter', 'Письмо в кармане': 'letter', 'Тень на изнанке клапана': 'flap-back-shade',
+             'Изнанка клапана': 'flap-back', 'Печать у кончика клапана': 'seal-back', 'Тень от клапана': 'flap-cast',
+             'Подкладка': 'lining', 'Тень конверта': 'envelope-shadow', 'Карман': 'pocket',
+             'Тень клапана на кармане': 'flap-cast-pocket'}
 
 
-def envelope_full():
-    """Конверт: корпус (под клапаном – внутренняя сторона) и верхний клапан отдельно,
-    оба в одном кадре – на сайте клапан поворачивается на петле у верхнего края."""
-    a = load_rgba('envelope2.png')[86:1614, 45:902]
-    rgb, alpha = a[..., :3], a[..., 3] / 255
-    H, W = alpha.shape
-    flap = poly_mask((H, W), ENV_FLAP)
-    px = rgb[(alpha > .99) & ~flap][::7]
-    paper = np.median(px[px.mean(1) > np.percentile(px.mean(1), 70)], 0)   # сама бумага, без узора
-    # внутренняя сторона: бумага чуть темнее, к верхнему краю – мягкая тень кармана
-    yy = np.mgrid[:H, :W][0]
-    inside = paper * np.array([.97, .96, .95]) * (1 - .1 * np.clip(1 - yy / (H * .5), 0, 1))[..., None]
-    rng = np.random.default_rng(9)
-    inside = inside + ndi.gaussian_filter(rng.normal(0, 2, (H, W)), .9)[..., None]
-    cover = ndi.binary_dilation(flap, iterations=7)          # с запасом: тень клапана тоже уходит
-    soft = ndi.gaussian_filter(cover.astype(float), 1.2)[..., None]
-    body = rgb * (1 - soft) + inside * soft
-    save('env-body', body, alpha, quality=86)
-    fa = ndi.gaussian_filter(flap.astype(float), .8) * alpha
-    save_full('env-flap', rgb, fa)
-    s = load_rgba('seal2.png')[102:1141, 134:1124]
-    rgb_s, a_s = shrink(s[..., :3], s[..., 3] / 255, 560)
-    save('env-seal', rgb_s, a_s)
-    print('paper', paper.round())
+def envelope_anim():
+    """Открытие конверта – присланная анимация Lottie как есть: кадры, маски и тайминг не меняются.
+    Встроенные картинки вынесены файлами (5,8 МБ → ≈ 1,4 МБ): JPEG – как прислали, PNG – webp
+    без потерь (письмо, печать, тени), а крупные клапан и карман – с качеством 92 (без потерь они в 4 раза тяжелее). Данные – assets/envelope/envelope.js
+    (скрипт, а не JSON: сайт открывается и двойным щелчком по index.html)."""
+    import base64
+    import io
+    import json
+    out = os.path.join(HERE, '..', 'assets', 'envelope')
+    d = json.load(open(os.path.join(SRC, 'envelope-opening.json'), encoding='utf-8'))
+    names = {l['refId']: ENV_FILES[l['nm']] for l in d['layers'] if l.get('refId')}
+    for a in d['assets']:
+        head, b64 = a['p'].split(',', 1)
+        raw = base64.b64decode(b64)
+        name = names[a['id']]
+        if 'jpeg' in head:
+            fn = name + '.jpg'
+            open(os.path.join(out, fn), 'wb').write(raw)
+        else:
+            im = Image.open(io.BytesIO(raw)).convert('RGBA')
+            lossless, lossy = io.BytesIO(), io.BytesIO()
+            im.save(lossless, 'WEBP', lossless=True, method=6)
+            im.save(lossy, 'WEBP', quality=92, method=6, alpha_quality=95)
+            best = lossless if lossless.tell() <= lossy.tell() + 50 * 1024 else lossy
+            fn = name + '.webp'
+            open(os.path.join(out, fn), 'wb').write(best.getvalue())
+        a.update(u='assets/envelope/', p=fn, e=0)
+        print(f'{fn} {a["w"]}x{a["h"]} {os.path.getsize(os.path.join(out, fn)) // 1024} KB')
+    js = 'window.ENVELOPE = ' + json.dumps(d, ensure_ascii=False, separators=(',', ':')) + ';\n'
+    open(os.path.join(out, 'envelope.js'), 'w', encoding='utf-8').write(
+        '/* Открытие конверта – присланная анимация Lottie (tools/src/envelope-opening.json), картинки – рядом */\n' + js)
+    print(f'envelope.js {len(js) // 1024} KB; кадров {d["op"]} при {d["fr"]} к/с; метки:',
+          '; '.join(f'{m["tm"]} {m["cm"]}' for m in d.get('markers', [])))
 
 
 def save_full(name, rgb, alpha, quality=86):
@@ -204,21 +211,6 @@ def flowers_bottom():
     a = load_rgba('flowers-bottom.png')
     rgb, alpha = shrink(a[..., :3], a[..., 3] / 255, 1600)
     save('flowers-bottom', rgb, alpha)
-
-
-def env_inside():
-    """Подкладка конверта (внутренняя сторона и изнанка клапана): та же бумага, без узора."""
-    a = load_rgba('envelope2.png')[86:1614, 45:902]
-    rgb, alpha = a[..., :3], a[..., 3] / 255
-    H, W = alpha.shape
-    flap = poly_mask((H, W), ENV_FLAP)
-    px = rgb[(alpha > .99) & ~flap][::7]
-    paper = np.median(px[px.mean(1) > np.percentile(px.mean(1), 70)], 0)
-    rng = np.random.default_rng(12)
-    fibre = ndi.gaussian_filter(rng.normal(0, 1, (H, W)), (6, 1.2))          # продольные волокна бумаги
-    fibre = fibre / fibre.std() * 2.2 + ndi.gaussian_filter(rng.normal(0, 1.4, (H, W)), .8)
-    lining = paper * np.array([.97, .96, .94]) + fibre[..., None]
-    save_full('env-inside', lining, np.ones((H, W)))
 
 
 # ---------- четвёртый набор: обложка под 1920 × 1080 и новые рамки ----------
@@ -534,7 +526,7 @@ def frame_place():
     ornament('orn-pendant', s, clean, (1095, 1129, 474, 554))   # подвеска под «Открыть на карте» (линия – на сайте)
 
 
-ALL = {f.__name__: f for f in (heart_wreath, envelope_full, backgrounds, flowers_bottom, env_inside, hero,
+ALL = {f.__name__: f for f in (heart_wreath, envelope_anim, backgrounds, flowers_bottom, hero,
                                frame_program, frame_invite, frame_dress, frame_place)}
 if __name__ == '__main__':
     for n in sys.argv[1:] or ALL:

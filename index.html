@@ -8,10 +8,10 @@
   <meta property="og:title" content="Фёдор и Ирина – 21.07.2027">
   <meta property="og:description" content="Приглашаем вас на нашу свадьбу">
   <meta name="theme-color" content="#23270b">
-  <link rel="preload" href="assets/img/env-body.webp" as="image">
-  <link rel="preload" href="assets/img/env-flap.webp" as="image">
-  <link rel="preload" href="assets/img/env-seal.webp" as="image">
-  <link rel="preload" href="assets/img/env-inside.webp" as="image">
+  <link rel="preload" href="assets/envelope/body.jpg" as="image">
+  <link rel="preload" href="assets/envelope/pocket.webp" as="image">
+  <link rel="preload" href="assets/envelope/flap.webp" as="image">
+  <link rel="preload" href="assets/envelope/seal.webp" as="image">
   <link rel="preload" href="assets/img/hero-bg.jpg" as="image" media="(max-aspect-ratio: 7/10)">
   <link rel="preload" as="image" imagesrcset="assets/img/hero-wide.jpg 1920w, assets/img/hero-wide-2880.jpg 2880w" imagesizes="(min-aspect-ratio: 16/9) 100vw, 178vh" media="(min-aspect-ratio: 7/10)">
   <link rel="preload" href="assets/img/hero-heart.webp" as="image">
@@ -25,37 +25,12 @@
   <!-- фон: одна штора, медленно едет при прокрутке -->
   <div class="backdrop" aria-hidden="true"><img src="assets/img/bg-sections.webp" alt="" width="1024" height="1536" decoding="async"></div>
 
-  <!-- ============ ЛИЦО ОТКРЫТКИ: КОНВЕРТ НА ВЕСЬ ЭКРАН ============ -->
+  <!-- ============ ЛИЦО ОТКРЫТКИ: КОНВЕРТ – присланная анимация открытия (Lottie) ============ -->
   <div class="intro" id="intro">
-    <div class="envelope">
-      <div class="env__card">
-        <img class="env__body" src="assets/img/env-body.webp" alt="" width="857" height="1528">
-        <!-- внутренняя сторона конверта: подкладка и тень в глубине кармана -->
-        <div class="env__inside" aria-hidden="true"><span class="env__cast"></span></div>
-        <!-- приглашение внутри: видно в вырезе, после открытия выдвигается -->
-        <div class="env__letter" aria-hidden="true">
-          <div class="env__note">
-            <span class="env__note-kicker">Wedding Day</span>
-            <span class="env__note-names">Фёдор &amp; Ирина</span>
-            <i class="env__note-rule"></i>
-            <span class="env__note-date">21.07.2027</span>
-            <img class="env__note-lily" src="assets/img/orn-lily.webp" alt="" width="141" height="114">
-          </div>
-        </div>
-        <!-- передняя стенка кармана поверх письма -->
-        <div class="env__pocket" aria-hidden="true"><img src="assets/img/env-body.webp" alt="" width="857" height="1528"></div>
-        <!-- клапан на петле: лицевая сторона с печатью, изнанка с подкладкой -->
-        <div class="env__flap">
-          <img class="env__flap-front" src="assets/img/env-flap.webp" alt="" width="857" height="1528">
-          <span class="env__shade" aria-hidden="true"></span>
-          <div class="env__flap-back" aria-hidden="true"><span class="env__back-shade"></span></div>
-          <!-- печать – целая, держит кончик клапана и откидывается вместе с ним; изнанка – она же, видна у кончика открытого клапана -->
-          <button class="seal" id="intro-open" type="button" aria-label="Открыть приглашение">
-            <img class="seal__img" src="assets/img/env-seal.webp" alt="" width="560" height="588">
-          </button>
-          <span class="seal-back" aria-hidden="true"><img src="assets/img/env-seal.webp" alt="" width="560" height="588"></span>
-        </div>
-      </div>
+    <div class="intro__box">
+      <div class="intro__anim" id="intro-anim" aria-hidden="true"></div>
+      <!-- печать нарисована в анимации; кнопка – прозрачная, точно над ней -->
+      <button class="seal" id="intro-open" type="button" aria-label="Открыть приглашение"></button>
     </div>
   </div>
 
@@ -224,6 +199,8 @@
   </button>
   <audio id="bg-music" src="assets/music.mp3" preload="none" loop></audio>
 
+  <script src="assets/envelope/lottie_light.min.js"></script>
+  <script src="assets/envelope/envelope.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
