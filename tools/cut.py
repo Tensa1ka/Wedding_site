@@ -421,11 +421,10 @@ def ornament(name, rgb, clean, box, clear=None):
 
 
 # ---------- пятый набор: присланные рамки без текста (текст – на сайте), орнаменты – с образцов ----------
-# frame-1.webp – слои SVG «Рамка 1», сведённые без изменений; frame-dress-pearl.webp и frame-place-pearl.jpg –
-# присланные жемчужные рамки «Дресс-код» и «Адрес» (на чёрном);
+# frame-1.webp – слои SVG «Рамка 1», сведённые без изменений; frame-dress-pearl.webp и frame-place-pearl.webp –
+# присланные жемчужные рамки «Дресс-код» и «Адрес» (фон уже прозрачный) – берутся как есть;
 # sample-*.jpg / sample-place.webp – образцы из архива «образец страниц сайта» (с них – лилия и линии «Адреса»).
-# На сайте прямоугольные рамки тянутся по высоте под текст: растягивается полоса с ровными планками
-# (у «Рамки 1» – строки 1020–1110; у «Дресс-кода» полоса из целого числа жемчужин повторяется, см. frame_dress).
+# На сайте «Рамка 1» тянется по высоте под текст: растягивается полоса с ровными планками (строки 1020–1110).
 
 def smooth_fill(rgb, known, sigma):
     """Плавная заливка по известным пикселям (взвешенное гауссово среднее);
@@ -495,61 +494,23 @@ def frame_invite():
     ornament('orn-heart', rgb, clean, (1292, 1378, 388, 492))
 
 
-# Новые рамки подгоняются под поле для текста прежних, поэтому раскладка текста в style.css не меняется.
-# «Дресс-код»: поле прежней рамки в кадре 869 × 1775 и поле присланной frame-dress-pearl.webp (884 × 1779) –
-# x слева и справа посередине высоты, y сверху и снизу между цветами.
-DRESS_FIELD_OLD = (107, 251, 782, 1654)
-DRESS_FIELD_NEW = (97, 176, 784, 1566)
-DRESS_GAP = 133          # от низа поля до низа кадра – как у прежней рамки (больше – если цветок внизу ниже)
-DRESS_SIDE = 120         # ширина боковых планок для border-image (жемчужная нитка и золотые линии)
-# «Адрес»: овал поля текущей рамки (1024 × 1536) и присланной frame-place-pearl.jpg (1024 × 1536)
-PLACE_FIELD_OLD = (182, 298, 841, 1234)
-PLACE_FIELD_NEW = (174, 289, 849, 1212)
-
-
-def fit_frame(rgb, alpha, sx, sy, tx, ty, size):
-    """Масштаб sx, sy и сдвиг tx, ty в кадр size (премультиплицированно – без тёмной каймы на краях)."""
-    im = Image.fromarray(np.dstack([np.clip(rgb, 0, 255), alpha * 255]).round().astype(np.uint8), 'RGBA').convert('RGBa')
-    im = im.transform(size, Image.AFFINE, (1 / sx, 0, -tx / sx, 0, 1 / sy, -ty / sy), Image.BICUBIC).convert('RGBA')
-    a = np.asarray(im).astype(float)
-    return a[..., :3], a[..., 3] / 255
+def as_sent(name, src):
+    """Присланная рамка как есть: пиксели не меняются, только альфа доведена до 255 (у присланных webp она
+    бывает не выше 254) и пустые прозрачные поля вокруг обрезаны по силуэту. Проценты поля в style.css –
+    от обрезанного кадра."""
+    a = load_rgba(src)
+    return save(name, a[..., :3], np.clip(a[..., 3] / 252, 0, 1), quality=95)
 
 
 def frame_dress():
-    """Рамка «Дресс-код» – присланная жемчужная frame-dress-pearl.webp: чёрный фон – прозрачный; масштаб одинаковый
-    по обеим осям – ширина поля как у прежней рамки, верх поля на том же месте, низ кадра – на DRESS_GAP ниже поля.
-    Лилия у «оставить для невесты» – с образца.
-    Бока рамки – жемчужная нитка: при вытягивании под текст полоса из целого числа жемчужин повторяется
-    (border-image round), а не растягивается. Печатает её строки – --cut-* в style.css."""
-    rgb, alpha = cut_black(load('frame-dress-pearl.webp'), band=4)
-    (ox0, oy0, ox1, _), (nx0, ny0, nx1, ny1) = DRESS_FIELD_OLD, DRESS_FIELD_NEW
-    k = (ox1 - ox0) / (nx1 - nx0)
-    tx, ty = ox0 - nx0 * k, oy0 - ny0 * k
-    low = np.where(alpha.max(1) > .03)[0][-1] * k + ty         # нижний край цветка
-    H = int(np.ceil(max(ny1 * k + ty + DRESS_GAP, low + 3)))
-    rgb, alpha = fit_frame(rgb, alpha, k, k, tx, ty, (869, H))
-    save_full('frame-dress', rgb, alpha, quality=88)
-    # полоса для повторения: высота – целое число жемчужин, строки над и под ней совпадают на обоих боках
-    flat = rgb * alpha[..., None]
-    sides = np.r_[0:DRESS_SIDE, 869 - DRESS_SIDE:869]
-    sig = flat[400:1300, 40:110].mean((1, 2))
-    sig = sig - sig.mean()
-    ac = np.correlate(sig, sig, 'full')[len(sig) - 1:]
-    period = 15 + np.argmax(ac[15:120])
-    best = None
-    for n in (3, 4, 5):
-        h = int(round(n * period))
-        for r in range(int(ny0 * k + ty) + 450, int(ny1 * k + ty) - 650 - h):
-            err = np.abs(flat[r - 2:r + 3, sides] - flat[r + h - 2:r + h + 3, sides]).mean()
-            if best is None or err < best[0]:
-                best = (err, r, h)
-    err, r, h = best
-    print(f'  кадр 869 × {H}, шаг жемчуга {period}, полоса строк {r}–{r + h} ({h} = {h / period:.2f} шага, '
-          f'шов {err:.1f}): --frame-h {H}; --cut-t {r}; --cut-b {H - r - h}; бока {DRESS_SIDE}')
+    """Рамка «Дресс-код» – присланная жемчужная frame-dress-pearl.webp как есть (на сайте не растягивается).
+    Лилия у «оставить для невесты» – с образца, бумага образца приведена к тону поля рамки."""
+    im = as_sent('frame-dress', 'frame-dress-pearl.webp')
+    tone = np.median(np.asarray(im.convert('RGB'))[500:1000, 250:600].reshape(-1, 3), 0)
     y0, y1, x0, x1 = 812, 930, 650, 798
     s = load('sample-dress.jpg')[y0:y1, x0:x1]
     paper = np.median(s.reshape(-1, 3), 0)
-    s = s * np.median(rgb[y0:y1, x0:x1].reshape(-1, 3), 0) / paper     # бумага образца → тон бумаги рамки
+    s = s * tone / paper                                       # бумага образца → тон бумаги рамки
     corner = np.zeros(s.shape[:2], bool)
     corner[:858 - y0, :688 - x0] = True                        # слева сверху – конец строки «просим»: стереть
     s[ndi.binary_dilation(corner & (s.mean(2) < 200), iterations=2) & corner] = np.median(s.reshape(-1, 3), 0)
@@ -562,18 +523,9 @@ def frame_dress():
 
 
 def frame_place():
-    """«Адрес» – присланная жемчужная овальная рамка frame-place-pearl.jpg (1024 × 1536): чёрный фон – прозрачный,
-    овал поля совмещён с полем прежней рамки (по ширине −2,4 %, по высоте +1,4 %); если нижний цветок выходит
-    за кадр, рамка чуть приподнимается. Линии с лилией и подвеска под «Открыть на карте» – с образца."""
-    rgb, alpha = cut_black(load('frame-place-pearl.jpg'), band=4, min_hole=1)
-    (ox0, oy0, ox1, oy1), (nx0, ny0, nx1, ny1) = PLACE_FIELD_OLD, PLACE_FIELD_NEW
-    sx, sy = (ox1 - ox0) / (nx1 - nx0), (oy1 - oy0) / (ny1 - ny0)
-    tx, ty = ox0 - nx0 * sx, oy0 - ny0 * sy
-    rows = np.where(alpha.max(1) > .03)[0]
-    ty -= max(0, rows[-1] * sy + ty - (1536 - 3))
-    print(f'  поле: x {nx0 * sx + tx:.0f}–{nx1 * sx + tx:.0f}, y {ny0 * sy + ty:.0f}–{ny1 * sy + ty:.0f} (прежнее {PLACE_FIELD_OLD})')
-    rgb, alpha = fit_frame(rgb, alpha, sx, sy, tx, ty, (1024, 1536))
-    save_full('frame-place', rgb, alpha, quality=88)
+    """«Адрес» – присланная жемчужная овальная рамка frame-place-pearl.webp как есть.
+    Линии с лилией и подвеска под «Открыть на карте» – с образца."""
+    as_sent('frame-place', 'frame-place-pearl.webp')
     s = load_rgba('sample-place.webp')[..., :3]
     yy, xx = np.mgrid[:1536, :1024]
     clean = paper_tone(s, ((xx - 513) / 330) ** 2 + ((yy - 765) / 460) ** 2 < 1)
