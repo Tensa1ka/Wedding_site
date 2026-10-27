@@ -162,15 +162,14 @@ h1, h2, h3, p { margin: 0; }
 /* =========================================================
    Обложка: присланное фото слоями – фон без сердца, сердце, имена и дата.
    Сцена – кадр картинки фона, растянутый как cover (широкие экраны: сцена 1920 × 1080, продолженная вправо и влево)
-   или целиком по высоте (узкие: фото 1124 × 1999, по краям то же фото, размытое).
+   или по высоте обложки (узкие: фото 1124 × 1999, продолженное вправо и влево тем же фоном до 1500 × 1999 –
+   без размытых полей). На экранах выше фото обложка ровно по высоте фото: сверху и снизу нет пустых полос.
    .hero__frame – место присланного фото в сцене; сердце и надписи – в процентах от него.
    ========================================================= */
 .hero {
   position: relative;
-  display: grid;
-  grid-template: minmax(0, 1fr) / minmax(0, 1fr);   /* одна ячейка ровно в размер экрана */
-  block-size: 100vh;
-  block-size: 100svh;
+  block-size: min(100vh, 100vw * 1999 / 1124);
+  block-size: min(100svh, 100vw * 1999 / 1124);
   overflow: hidden;
   isolation: isolate;
   background: #ece6dc;
@@ -178,47 +177,33 @@ h1, h2, h3, p { margin: 0; }
   -webkit-mask-image: linear-gradient(#000 94%, transparent);
   mask-image: linear-gradient(#000 94%, transparent);
 }
-.hero__fill { grid-area: 1 / 1; filter: blur(28px); scale: 1.15; }
 .hero__scene {
   position: absolute;
   inset-block-start: 50%;
   inset-inline-start: 50%;
-  inline-size: min(100vw, 100vh * 1124 / 1999);
-  aspect-ratio: 1124 / 1999;
+  inline-size: max(100vw, min(100vh * 1500 / 1999, 100vw * 1500 / 1124));   /* высота – как у обложки, но не уже экрана */
+  aspect-ratio: 1500 / 1999;
   translate: -50% -50%;
 }
-@supports (height: 100svh) { .hero__scene { inline-size: min(100vw, 100svh * 1124 / 1999); } }
+@supports (height: 100svh) { .hero__scene { inline-size: max(100vw, min(100svh * 1500 / 1999, 100vw * 1500 / 1124)); } }
 .hero__photo { inline-size: 100%; block-size: 100%; max-inline-size: none; }
-.hero__frame { position: absolute; inset: 0; }
+.hero__frame { position: absolute; inset-inline-start: 12.533%; inset-block-start: 0; inline-size: 74.933%; block-size: 100%; }
 .hero__heart { position: absolute; inset-inline-start: 2.669%; inset-block-start: 20.31%; inline-size: 94.306%; }
 .hero__heart-img { inline-size: 100%; }
 .hero__name, .hero__date { position: absolute; max-inline-size: none; }
 .hero__name--1 { inset-inline-start: 27.925%; inset-block-start: 29.455%; inline-size: 45.377%; }
 .hero__name--2 { inset-inline-start: 38.208%; inset-block-start: 44.025%; inline-size: 33.962%; }
 .hero__date { inset-inline-start: 38.585%; inset-block-start: 63.103%; inline-size: 22.642%; }
-/* размытое фото по краям – только на узких экранах */
-@media (max-aspect-ratio: 7 / 10) {
-  .hero__fill { background: url(assets/img/hero-bg.jpg) 50% 50% / cover; }
-}
-/* стык фото с размытыми полями – мягкий */
-@media (min-aspect-ratio: 1124 / 1999) and (max-aspect-ratio: 7 / 10) {
-  .hero__scene { -webkit-mask-image: linear-gradient(90deg, transparent, #000 2.5%, #000 97.5%, transparent); mask-image: linear-gradient(90deg, transparent, #000 2.5%, #000 97.5%, transparent); }
-}
-@media (max-aspect-ratio: 1124 / 1999) {
-  .hero__scene { -webkit-mask-image: linear-gradient(transparent, #000 2%, #000 98%, transparent); mask-image: linear-gradient(transparent, #000 2%, #000 98%, transparent); }
-}
 /* широкие экраны: сцена 1920 × 1080 на весь экран (cover), фото – в её середине */
 @media (min-aspect-ratio: 7 / 10) {
-  .hero__fill { display: none; }
+  .hero { block-size: 100vh; block-size: 100svh; }
   .hero__scene { inline-size: max(100vw, 100vh * 1920 / 1080); aspect-ratio: 1920 / 1080; }
-  .hero__frame { inset: auto; inset-inline-start: 31.701%; inset-block-start: -1.852%; inline-size: 36.597%; block-size: 115.741%; }
+  .hero__frame { inset-inline-start: 31.701%; inset-block-start: -1.852%; inline-size: 36.597%; block-size: 115.741%; }
 }
 @supports (height: 100svh) { @media (min-aspect-ratio: 7 / 10) { .hero__scene { inline-size: max(100vw, 100svh * 1920 / 1080); } } }
 
 /* после открытия конверта: фон проявляется, сердце поднимается, как рамки ниже, имена пишутся пером, затем дата */
-.js .hero__fill, .js .hero__photo { opacity: 0; }
-.js .hero__photo { scale: 1.03; }
-.is-opened .hero__fill { opacity: 1; transition: opacity 1.2s ease .1s; }
+.js .hero__photo { opacity: 0; scale: 1.03; }
 .is-opened .hero__photo { opacity: 1; scale: 1; transition: opacity 1.4s ease .25s, scale 2.6s var(--ease-out-soft) .25s; }
 .js .hero__heart { opacity: 0; translate: 0 30px; scale: .94; }
 .is-opened .hero__heart { opacity: 1; translate: 0 0; scale: 1; transition: opacity 1.3s ease .5s, translate 1.8s var(--ease-out-soft) .5s, scale 1.8s var(--ease-out-soft) .5s; }

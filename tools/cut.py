@@ -1,8 +1,8 @@
 """Готовит присланные картинки (tools/src) для сайта (assets/img).
 Фон листов – нарисованная «шахматка» вместо прозрачности: клетки, связанные с краем кадра, становятся прозрачными.
 Рамки «Приглашение», «Адрес», «Программа», «Дресс-код» – без текста (текст – на сайте), золотые орнаменты
-с рамок и образцов – отдельными картинками. Обложка: присланное фото и его широкая версия 1920 × 1080 (и 2880 × 1620),
-продолженная вправо и влево тем же фоном. Новые рамки – как прислали: убран только фон вокруг, «Адрес» приведён к кадру образца.
+с рамок и образцов – отдельными картинками. Обложка: присланное фото, продолженное вправо и влево тем же фоном, –
+узкая версия 1500 × 1999 и широкая 1920 × 1080 (и 2880 × 1620). Новые рамки – как прислали: убран только фон вокруг, «Адрес» приведён к кадру образца.
 Запуск: python3 tools/cut.py [имя ...]  (нужны numpy, scipy, Pillow)"""
 import os
 import sys
@@ -232,6 +232,46 @@ def min_cut(A, B, block):
     return ndi.gaussian_filter((np.arange(w)[None] >= path[:, None]).astype(float), 2.5)
 
 
+def seam_gap(A, B, block):
+    """Разница освещения B − A на линии шва (min_cut), сглаженная по высоте. Учитываются только ровные места
+    (ткань, пол); где у шва цветы или листья, поправка сходит на нет, а не тянет копию к их цвету."""
+    m = min_cut(A, B, block)
+    rows, x = np.arange(len(m)), (m < .5).sum(1).clip(0, m.shape[1] - 1)
+    As, Bs = ndi.gaussian_filter(A, (3, 3, 0)), ndi.gaussian_filter(B, (3, 3, 0))
+    busy = (np.abs(A - As).mean(2) + np.abs(B - Bs).mean(2))[rows, x]   # ткань и пол – до 4, цветы и листья – от 6
+    w = np.exp(-(busy / 4) ** 4)
+    d = ndi.gaussian_filter1d((Bs - As)[rows, x] * w[:, None], 30, axis=0)
+    return np.clip(d / (ndi.gaussian_filter1d(w, 30) + .02)[:, None], -30, 30)[:, None]
+
+
+def extend_sides(b, keep, W, ov, tone=0):
+    """Кадр b, продолженный вправо и влево до ширины W его же копиями: копия заходит на кадр на ov,
+    стык идёт по линии наименьшей разницы и не задевает keep (место сердца). Возвращает сцену и левый край кадра в ней.
+    tone > 0 – копии ещё и подогнаны по яркости к кадру у стыка (поправка гаснет за tone пикселей от него):
+    у левого и правого края фото пол разной яркости, без поправки на полу виден шов."""
+    Hs, Ws = b.shape[:2]
+    x0 = (W - Ws) // 2
+    t0 = x0 + Ws - ov
+    out = np.zeros((Hs, W, 3))
+    out[:, x0:x0 + Ws] = b
+    xl = np.arange(x0 + ov)                                   # левая копия: её правый край заходит на центр на ov
+    c = xl - (x0 - Ws + ov)
+    L = b[:, np.where(c < 0, -c - 1, c)]
+    xr = np.arange(t0, W)                                     # правая копия
+    c = xr - t0
+    R = b[:, np.where(c >= Ws, 2 * Ws - c - 1, c)]
+    if tone:
+        L += seam_gap(L[:, x0:], b[:, :ov], keep[:, :ov]) * np.exp(-np.maximum(0, x0 - xl) / tone)[None, :, None]
+        R -= seam_gap(b[:, Ws - ov:], R[:, :ov], keep[:, Ws - ov:]) * np.exp(-np.maximum(0, xr - (x0 + Ws - 1)) / tone)[None, :, None]
+    out[:, :x0] = L[:, :x0]
+    m = min_cut(L[:, x0:], b[:, :ov], keep[:, :ov])[..., None]
+    out[:, x0:x0 + ov] = L[:, x0:] * (1 - m) + b[:, :ov] * m
+    out[:, x0 + Ws:] = R[:, ov:]
+    m = min_cut(b[:, Ws - ov:], R[:, :ov], keep[:, Ws - ov:])[..., None]
+    out[:, t0:x0 + Ws] = b[:, Ws - ov:] * (1 - m) + R[:, :ov] * m
+    return out, x0
+
+
 def hero_wide(ph, bg, W, H):
     """Фон обложки для широких экранов: присланная сцена без сердца, продолженная вправо и влево.
     Фон без сердца (bg-hero.png – тот же кадр) повторён слева и справа; стыки идут по линии
@@ -244,20 +284,7 @@ def hero_wide(ph, bg, W, H):
     lab, n = ndi.label(heart)
     heart = lab == 1 + ndi.sum(heart, lab, range(1, n + 1)).argmax()
     keep = ndi.binary_dilation(heart, iterations=12)          # шов не проходит по сердцу
-    x0, ov = (W - Ws) // 2, round(W * 20 / 2880)                # узкое перекрытие: у сердца – пышные букеты из двух колонн
-    out = np.zeros((Hs, W, 3))
-    out[:, x0:x0 + Ws] = b
-    xs = np.arange(x0)                                        # левая копия: её правый край заходит на центр на ov
-    c = xs - (x0 - Ws + ov)
-    out[:, xs] = b[:, np.where(c < 0, -c - 1, c)]
-    m = min_cut(b[:, Ws - ov:], b[:, :ov], keep[:, :ov])[..., None]
-    out[:, x0:x0 + ov] = b[:, Ws - ov:] * (1 - m) + b[:, :ov] * m
-    t0 = x0 + Ws - ov                                         # правая копия
-    xs = np.arange(x0 + Ws, W)
-    c = xs - t0
-    out[:, xs] = b[:, np.where(c >= Ws, 2 * Ws - c - 1, c)]
-    m = min_cut(b[:, Ws - ov:], b[:, :ov], keep[:, Ws - ov:])[..., None]
-    out[:, t0:x0 + Ws] = b[:, Ws - ov:] * (1 - m) + b[:, :ov] * m
+    out, x0 = extend_sides(b, keep, W, round(W * 20 / 2880))   # узкое перекрытие: у сердца – пышные букеты из двух колонн
     y0 = round(H * 20 / 1080)
     print('  фото в широкой сцене: left %.3f%% top %.3f%% width %.3f%% height %.3f%%'
           % (100 * x0 / W, -100 * y0 / H, 100 * Ws / W, 100 * Hs / H))
@@ -274,7 +301,9 @@ def heart_mask(p, b):
 def hero():
     """Обложка слоями: фон без сердца (узкий кадр – hero-bg.jpg, широкие 1920 × 1080 и 2880 × 1620),
     сердце из присланного фото без надписей и надписи отдельно – на сайте сердце проявляется, имена пишутся.
-    Поверх фона слои дают ровно присланное фото. Тёмная кайма скриншота в 1 px срезана."""
+    Поверх фона слои дают ровно присланное фото. Тёмная кайма скриншота в 1 px срезана.
+    Узкий кадр – фото во всю высоту, продолженное вправо и влево тем же фоном до 1500 × 1999:
+    экраны шире фото (вплоть до 3 : 4) заполнены без размытых полей."""
     ph = Image.open(os.path.join(SRC, 'hero.jpg')).convert('RGB')
     box = (1, 0, ph.width - 1, ph.height - 1)
     bg = Image.open(os.path.join(SRC, 'bg-hero.png')).convert('RGB').resize(ph.size, Image.LANCZOS).crop(box)
@@ -282,7 +311,10 @@ def hero():
     p, b = np.asarray(ph).astype(float), np.asarray(bg).astype(float)
     heart = heart_mask(p, b)
     hm = ndi.gaussian_filter(ndi.binary_dilation(heart, iterations=6).astype(float), 3)
-    narrow = Image.fromarray(np.clip(p * (1 - hm[..., None]) + b * hm[..., None], 0, 255).astype(np.uint8))
+    keep = ndi.binary_dilation(heart, iterations=12)          # шов не проходит по сердцу
+    narrow, x0 = extend_sides(p * (1 - hm[..., None]) + b * hm[..., None], keep, 1500, 20, tone=120)
+    print('  фото в узкой сцене: left %.3f%% width %.3f%%' % (100 * x0 / narrow.shape[1], 100 * ph.width / narrow.shape[1]))
+    narrow = Image.fromarray(np.clip(narrow, 0, 255).astype(np.uint8))
     big = hero_wide(ph, bg, 2880, 1620)              # собирается один раз; 1920 × 1080 – уменьшенная копия
     for name, im in (('hero-bg', narrow), ('hero-wide-2880', big), ('hero-wide', big.resize((1920, 1080), Image.LANCZOS))):
         path = os.path.join(DST, name + '.jpg')
