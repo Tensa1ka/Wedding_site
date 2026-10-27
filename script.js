@@ -220,6 +220,8 @@
   var ask = document.getElementById("rsvp-ask");
   var done = document.getElementById("rsvp-done");
   var fail = document.getElementById("rsvp-fail");
+  var doneYes = document.getElementById("rsvp-done-yes");
+  var doneNo = document.getElementById("rsvp-done-no");
   var ANSWER = "entry.87327526", NAME = "entry.225506798";
 
   function openAsk(step) {
@@ -274,6 +276,10 @@
           nameInput.readOnly = true;
           radios.forEach(function (r) { r.disabled = true; });
           sendBtn.disabled = true;
+          // «До встречи» – только тем, кто придёт; первый вариант ответа – «С радостью буду!»
+          var coming = answer === radios[0];
+          doneYes.hidden = !coming;
+          doneNo.hidden = coming;
           openAsk(done);
         })
         .catch(function () { openAsk(fail); })
