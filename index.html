@@ -36,14 +36,13 @@
 
   <!-- ============ ОБЛОЖКА: присланное фото слоями – фон, сердце, имена и дата ============ -->
   <!-- широкие экраны (1920 × 1080 и любые альбомные) – та же сцена, продолженная вправо и влево;
-       узкие – присланное фото целиком, по краям то же фото размытое. Сердце проявляется, как рамки ниже,
-       имена пишутся пером. Вместе слои дают ровно присланное фото. -->
+       узкие – присланное фото целиком, по бокам продолженное тем же фоном (без размытия). Сердце проявляется,
+       как рамки ниже, имена пишутся пером. Вместе слои дают ровно присланное фото. -->
   <header class="hero" id="top">
-    <div class="hero__fill" aria-hidden="true"></div>
     <div class="hero__scene" aria-hidden="true">
       <picture>
         <source media="(min-aspect-ratio: 7/10)" srcset="assets/img/hero-wide.jpg 1920w, assets/img/hero-wide-2880.jpg 2880w" sizes="(min-aspect-ratio: 16/9) 100vw, 178vh" width="1920" height="1080">
-        <img class="hero__photo" src="assets/img/hero-bg.jpg" alt="" width="1124" height="1999" decoding="async">
+        <img class="hero__photo" src="assets/img/hero-bg.jpg" alt="" width="1500" height="1999" decoding="async">
       </picture>
       <div class="hero__frame">
         <div class="hero__heart">
