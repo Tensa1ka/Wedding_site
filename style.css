@@ -743,6 +743,18 @@ main {
 .js .countdown.is-in > :nth-child(7) { transition-delay: 1s; }
 .js .countdown.is-in > :nth-child(8) { transition-delay: 1.1s; }
 
+/* всё, что поднимается, растёт или поворачивается, остаётся на своём слое и после анимации:
+   иначе в последнем кадре браузер переносит элемент в общий слой и заново выравнивает по пикселям –
+   он вздрагивает на 0,2–1 px (рамка – вместе со всем, что внутри неё) */
+@media (prefers-reduced-motion: no-preference) {
+  .js .hero__photo, .js .hero__heart, .js .hero__date,
+  .js [data-reveal], .js [data-bloom], .js .divider b,
+  .js .cal > *, .js .cal__day--heart::before,
+  .js .prog li > *, .js .prog li + li::before,
+  .js .countdown, .js .countdown div, .js .countdown em, .countdown b,
+  .ask, .rsvp-done__heart { will-change: transform; }
+}
+
 /* =========================================================
    Без анимаций: только мягкие проявления, без движения
    ========================================================= */
