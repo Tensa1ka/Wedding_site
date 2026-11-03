@@ -31,6 +31,7 @@
       <div class="intro__anim" id="intro-anim" aria-hidden="true"></div>
       <!-- печать нарисована в анимации; кнопка – прозрачная, точно над ней -->
       <button class="seal" id="intro-open" type="button" aria-label="Открыть приглашение"></button>
+      <p class="hint intro__hint" aria-hidden="true">Нажмите на печать</p>
     </div>
   </div>
 
@@ -55,6 +56,11 @@
     </div>
     <h1 class="sr-only">Фёдор и Ирина – 21.07.2027</h1>
   </header>
+  <!-- под сердцем, внизу обложки: стрелка «Листай» (вне .hero – низ обложки растворяется маской) -->
+  <div class="hint scroll-cue" aria-hidden="true">
+    <svg class="scroll-cue__arrow" viewBox="0 0 20 36"><path d="M10 2v31M3 26l7 7 7-7"/></svg>
+    <span>Листай</span>
+  </div>
 
   <main>
     <!-- ============ ПРИГЛАШЕНИЕ И КАЛЕНДАРЬ: присланная «Рамка 1» – фон, текст и календарь живые ============ -->
