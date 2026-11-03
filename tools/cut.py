@@ -208,7 +208,8 @@ def backgrounds():
 
 
 def flowers_bottom():
-    a = load_rgba('flowers-bottom.png')
+    """Цветы внизу страницы – присланный букет flowers-bottom.webp (фон уже прозрачный)."""
+    a = load_rgba('flowers-bottom.webp')
     rgb, alpha = shrink(a[..., :3], a[..., 3] / 255, 1600)
     save('flowers-bottom', rgb, alpha)
 
@@ -505,10 +506,28 @@ def edge_alpha(rgb, fg, share, blur, band=1, soft=None):
     return col, ndi.gaussian_filter(alpha, blur) if blur else alpha
 
 
+def mend_bar(rgb, alpha, rows, cols, shift, fade=8):
+    """Планка рамки прямая: кусок с выщербленной кромкой (rows × cols) заменяется целым куском той же планки
+    на shift строк ниже; на стыках сверху, снизу и со стороны поля – плавный переход в fade пикселей."""
+    (y0, y1), (x0, x1) = rows, cols
+    w = np.ones((y1 - y0, x1 - x0))
+    ramp = np.linspace(0, 1, fade + 2)[1:-1]
+    w[:fade] *= ramp[:, None]
+    w[-fade:] *= ramp[::-1, None]
+    w[:, -fade:] *= ramp[None, ::-1]
+    a0, a1 = alpha[y0:y1, x0:x1], alpha[y0 + shift:y1 + shift, x0:x1]
+    a = a0 * (1 - w) + a1 * w
+    c = rgb[y0:y1, x0:x1] * (a0 * (1 - w))[..., None] + rgb[y0 + shift:y1 + shift, x0:x1] * (a1 * w)[..., None]
+    rgb[y0:y1, x0:x1] = np.where(a[..., None] > 0, c / np.maximum(a, 1e-6)[..., None], rgb[y0:y1, x0:x1])
+    alpha[y0:y1, x0:x1] = a
+
+
 def frame_invite():
     """«Рамка 1» как есть, чёрный фон вокруг – прозрачный. С поля убраны разделитель, линии у года
-    и сердце с линиями (календарь на сайте живой): звёздочка и сердце – отдельными картинками."""
+    и сердце с линиями (календарь на сайте живой): звёздочка и сердце – отдельными картинками.
+    У левой планки на уровне «Июль» в присланной картинке выщерблена внешняя кромка – там кусок той же планки ниже."""
     rgb, alpha = cut_black(load('frame-1.webp'))
+    mend_bar(rgb, alpha, (875, 1011), (100, 170), 220)
     boxes = [(935, 980, 395, 645, 'any'),                     # линия со звёздочкой
              (1086, 1106, 312, 738, 'any'),                   # линии у «2027»
              (1292, 1378, 265, 740, 'any')]                   # сердце у «21» с линиями
