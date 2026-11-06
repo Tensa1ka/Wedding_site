@@ -827,3 +827,9 @@ main {
   .js [data-write].is-in > .ink { opacity: 1; transition: opacity .6s ease; }
   .hero, .hero * { transition-duration: .6s !important; transition-delay: 0s !important; }
 }
+
+.panel--dress .rsvp__label {
+  font-family: var(--serif);
+  font-size: var(--fs-text);
+  font-weight: 600;
+}
