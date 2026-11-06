@@ -833,3 +833,41 @@ main {
   font-size: var(--fs-text);
   font-weight: 600;
 }
+
+/* Рамка растёт вместе с содержимым */
+.panel--dress .panel__body {
+  block-size: auto;
+}
+
+/* Подписи — как основной текст */
+.panel--dress .rsvp__label {
+  font-family: var(--serif);
+  font-size: var(--fs-text);
+  font-weight: 600;
+}
+
+/* Вопрос помещается в ширину анкеты */
+.panel--dress .rsvp__choice {
+  inline-size: 100%;
+}
+
+.panel--dress .rsvp__choice legend {
+  max-inline-size: 100%;
+  white-space: normal;
+}
+
+/* Ответы расположены вертикально */
+.panel--dress .rsvp__opts {
+  flex-direction: column;
+  align-items: stretch;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  margin-inline: auto;
+  gap: 1.2cqi;
+  text-align: left;
+}
+
+.panel--dress .rsvp__opt {
+  min-inline-size: 0;
+  white-space: normal;
+}
