@@ -513,7 +513,7 @@ main {
   margin: 2.4cqi 0 0;
   text-align: center;
 }
-.rsvp__label { padding: 0; font-weight: 600; font-size: var(--fs-text);; line-height: 1.15; color: inherit; }
+.rsvp__label { padding: 0; font-weight: 600; font-size: var(--fs-label); line-height: 1.15; color: inherit; }
 .rsvp__field {
   inline-size: 82%;
   block-size: max(24px, 4.6cqi);   /* шрифт поля – не меньше 16 px */
@@ -826,48 +826,4 @@ main {
   .js [data-write] > .ink { clip-path: none !important; opacity: 0; }
   .js [data-write].is-in > .ink { opacity: 1; transition: opacity .6s ease; }
   .hero, .hero * { transition-duration: .6s !important; transition-delay: 0s !important; }
-}
-
-.panel--dress .rsvp__label {
-  font-family: var(--serif);
-  font-size: var(--fs-text);
-  font-weight: 600;
-}
-
-/* Рамка растёт вместе с содержимым */
-.panel--dress .panel__body {
-  block-size: auto;
-}
-
-/* Подписи — как основной текст */
-.panel--dress .rsvp__label {
-  font-family: var(--serif);
-  font-size: var(--fs-text);
-  font-weight: 600;
-}
-
-/* Вопрос помещается в ширину анкеты */
-.panel--dress .rsvp__choice {
-  inline-size: 100%;
-}
-
-.panel--dress .rsvp__choice legend {
-  max-inline-size: 100%;
-  white-space: normal;
-}
-
-/* Ответы расположены вертикально */
-.panel--dress .rsvp__opts {
-  flex-direction: column;
-  align-items: stretch;
-  inline-size: fit-content;
-  max-inline-size: 100%;
-  margin-inline: auto;
-  gap: 1.2cqi;
-  text-align: left;
-}
-
-.panel--dress .rsvp__opt {
-  min-inline-size: 0;
-  white-space: normal;
 }
